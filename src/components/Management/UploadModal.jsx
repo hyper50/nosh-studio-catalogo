@@ -10,19 +10,56 @@ export default function UploadModal({ categories, onUpload, onClose }) {
   const [selectedTags, setSelectedTags] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef();
+  const dragCounter = useRef(0);
 
-  function handleFileSelect(e) {
-    const newFiles = Array.from(e.target.files);
-    setFiles((prev) => [...prev, ...newFiles]);
+  function addFiles(newFiles) {
+    const imageFiles = newFiles.filter((f) => f.type.startsWith('image/'));
+    if (imageFiles.length === 0) return;
+    setFiles((prev) => [...prev, ...imageFiles]);
 
-    newFiles.forEach((file) => {
+    imageFiles.forEach((file) => {
       const reader = new FileReader();
       reader.onload = (ev) => {
         setPreviews((prev) => [...prev, { name: file.name, url: ev.target.result }]);
       };
       reader.readAsDataURL(file);
     });
+  }
+
+  function handleFileSelect(e) {
+    addFiles(Array.from(e.target.files));
+  }
+
+  function handleDragEnter(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current++;
+    setIsDragging(true);
+  }
+
+  function handleDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current--;
+    if (dragCounter.current === 0) {
+      setIsDragging(false);
+    }
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    dragCounter.current = 0;
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    addFiles(droppedFiles);
   }
 
   function removeFile(index) {
@@ -57,6 +94,10 @@ export default function UploadModal({ categories, onUpload, onClose }) {
       <div
         style={{ ...commonStyles.modalContent, maxWidth: '700px' }}
         onClick={(e) => e.stopPropagation()}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
       >
         <div style={styles.header}>
           <h2 style={styles.title}>Subir fotos</h2>
@@ -66,12 +107,19 @@ export default function UploadModal({ categories, onUpload, onClose }) {
         </div>
 
         <div
-          style={styles.dropZone}
+          style={{
+            ...styles.dropZone,
+            ...(isDragging ? styles.dropZoneActive : {}),
+          }}
           onClick={() => fileInputRef.current.click()}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
         >
-          <Upload size={32} color={colors.textMuted} />
+          <Upload size={32} color={isDragging ? colors.white : colors.textMuted} />
           <p style={styles.dropText}>
-            Haz clic para seleccionar fotos
+            {isDragging ? 'Suelta las fotos aquí' : 'Arrastra fotos aquí o haz clic para seleccionar'}
           </p>
           <p style={styles.dropSubtext}>JPG, PNG — Se comprimirán automáticamente</p>
           <input
@@ -215,8 +263,12 @@ const styles = {
     padding: '32px',
     textAlign: 'center',
     cursor: 'pointer',
-    transition: 'border-color 0.2s',
+    transition: 'all 0.2s',
     marginBottom: '16px',
+  },
+  dropZoneActive: {
+    borderColor: colors.white,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   dropText: {
     color: colors.text,
