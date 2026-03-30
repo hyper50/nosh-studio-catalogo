@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { colors, fonts, radius, commonStyles } from '../../styles/theme';
 import { X, Save, Trash2, Star } from 'lucide-react';
 
@@ -9,6 +9,15 @@ export default function PhotoEditor({ photo, categories, onSave, onDelete, onClo
   const [featured, setFeatured] = useState(photo.featured || false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    function handleResize() {
+      setIsMobile(window.innerWidth < 768);
+    }
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   function toggleTag(tag) {
     setSelectedTags((prev) =>
@@ -37,17 +46,33 @@ export default function PhotoEditor({ photo, categories, onSave, onDelete, onClo
     onClose();
   }
 
+  const modalContentStyle = isMobile
+    ? { ...commonStyles.modalContent, maxWidth: '95vw', padding: '16px' }
+    : {
+        ...commonStyles.modalContent,
+        maxWidth: '1100px',
+        width: '95vw',
+        display: 'flex',
+        gap: '28px',
+        padding: '0',
+        overflow: 'hidden',
+        maxHeight: '85vh',
+      };
+
   return (
     <div style={commonStyles.modal} onClick={onClose}>
-      <div
-        style={{ ...commonStyles.modalContent, maxWidth: '700px', display: 'flex', gap: '20px' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div style={styles.imageSection}>
-          <img src={photo.thumbnailUrl || photo.url} alt="" style={styles.image} />
+      <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
+        {/* Imagen — grande a la izquierda en desktop, arriba en móvil */}
+        <div style={isMobile ? styles.imageSectionMobile : styles.imageSection}>
+          <img
+            src={photo.url || photo.thumbnailUrl}
+            alt=""
+            style={isMobile ? styles.imageMobile : styles.image}
+          />
         </div>
 
-        <div style={styles.formSection}>
+        {/* Formulario a la derecha */}
+        <div style={isMobile ? styles.formSectionMobile : styles.formSection}>
           <div style={styles.header}>
             <h3 style={styles.title}>Editar foto</h3>
             <button onClick={onClose} style={styles.closeBtn}>
@@ -145,21 +170,53 @@ export default function PhotoEditor({ photo, categories, onSave, onDelete, onClo
 }
 
 const styles = {
+  /* Desktop: imagen ocupa toda la mitad izquierda */
   imageSection: {
-    flex: '0 0 220px',
-    borderRadius: radius.sm,
+    flex: '0 0 55%',
+    backgroundColor: colors.bg,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '400px',
+    maxHeight: '85vh',
     overflow: 'hidden',
   },
   image: {
     width: '100%',
+    height: '100%',
+    objectFit: 'contain',
+    maxHeight: '85vh',
+  },
+  /* Móvil: imagen arriba, más compacta */
+  imageSectionMobile: {
+    width: '100%',
+    maxHeight: '200px',
+    overflow: 'hidden',
+    borderRadius: radius.sm,
+    marginBottom: '12px',
+  },
+  imageMobile: {
+    width: '100%',
+    height: '200px',
+    objectFit: 'cover',
     borderRadius: radius.sm,
   },
+  /* Desktop: formulario a la derecha con scroll */
   formSection: {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
     gap: '12px',
     minWidth: 0,
+    padding: '24px 24px 24px 0',
+    overflowY: 'auto',
+    maxHeight: '85vh',
+  },
+  /* Móvil: formulario debajo */
+  formSectionMobile: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
   },
   header: {
     display: 'flex',
@@ -199,7 +256,7 @@ const styles = {
     flexDirection: 'column',
     gap: '8px',
     marginTop: '6px',
-    maxHeight: '180px',
+    maxHeight: '250px',
     overflow: 'auto',
   },
   tagGroup: {},
