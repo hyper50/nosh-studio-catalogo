@@ -1,14 +1,15 @@
 import { colors, fonts } from '../../styles/theme';
-import { Menu, Search } from 'lucide-react';
+import { Menu } from 'lucide-react';
+import NoshWordmark from '../Common/NoshWordmark';
 
 export default function Navbar({ onMenuToggle, title }) {
   return (
     <div style={styles.navbar}>
       <div style={styles.left}>
         <button onClick={onMenuToggle} style={styles.menuBtn}>
-          <Menu size={22} />
+          <Menu size={20} />
         </button>
-        <span style={styles.title}>{title}</span>
+        <NoshWordmark color={colors.navText} width={110} />
       </div>
     </div>
   );
@@ -16,9 +17,9 @@ export default function Navbar({ onMenuToggle, title }) {
 
 const styles = {
   navbar: {
-    height: '56px',
-    backgroundColor: colors.bgSecondary,
-    borderBottom: `1px solid ${colors.border}`,
+    height: '52px',
+    backgroundColor: colors.navBg,
+    borderBottom: 'none',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -31,20 +32,15 @@ const styles = {
   left: {
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
+    gap: '14px',
   },
   menuBtn: {
     background: 'none',
     border: 'none',
-    color: colors.text,
+    color: colors.navText,
     cursor: 'pointer',
     padding: '6px',
     display: 'flex',
     alignItems: 'center',
-  },
-  title: {
-    color: colors.white,
-    fontSize: '16px',
-    fontWeight: '600',
   },
 };

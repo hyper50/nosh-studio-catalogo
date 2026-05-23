@@ -86,7 +86,7 @@ const styles = {
   },
   featuredActive: {
     backgroundColor: colors.star,
-    color: colors.bg,
+    color: '#F3F2EF',
     borderColor: colors.star,
   },
   group: {
@@ -101,8 +101,8 @@ const styles = {
     fontFamily: fonts.primary,
   },
   badge: {
-    backgroundColor: colors.white,
-    color: colors.bg,
+    backgroundColor: colors.paper,
+    color: colors.black,
     borderRadius: '10px',
     padding: '1px 6px',
     fontSize: '10px',
@@ -124,7 +124,7 @@ const styles = {
     zIndex: 50,
     minWidth: '200px',
     maxWidth: '320px',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+    boxShadow: '0 8px 24px rgba(28,28,26,0.12)',
   },
   clearAll: {
     background: 'none',

@@ -267,8 +267,8 @@ const styles = {
     marginBottom: '16px',
   },
   dropZoneActive: {
-    borderColor: colors.white,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: colors.black,
+    backgroundColor: 'rgba(28, 28, 26, 0.03)',
   },
   dropText: {
     color: colors.text,
@@ -304,9 +304,9 @@ const styles = {
     position: 'absolute',
     top: '4px',
     right: '4px',
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(28,28,26,0.6)',
     border: 'none',
-    color: colors.white,
+    color: '#F3F2EF',
     cursor: 'pointer',
     borderRadius: '50%',
     width: '22px',

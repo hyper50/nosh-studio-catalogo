@@ -78,7 +78,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    color: colors.white,
+    color: colors.text,
     fontSize: '14px',
     fontWeight: '500',
     marginBottom: '12px',

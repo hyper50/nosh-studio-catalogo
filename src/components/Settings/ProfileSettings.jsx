@@ -156,7 +156,7 @@ const styles = {
     marginBottom: '16px',
   },
   subtitle: {
-    color: colors.white,
+    color: colors.text,
     fontSize: '15px',
     fontWeight: '500',
     margin: '0 0 16px 0',

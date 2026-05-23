@@ -241,7 +241,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: colors.white,
+    color: colors.text,
     fontWeight: '600',
     fontSize: '14px',
     flexShrink: 0,
@@ -251,7 +251,7 @@ const styles = {
     minWidth: 0,
   },
   userName: {
-    color: colors.white,
+    color: colors.text,
     fontSize: '14px',
     fontWeight: '500',
     margin: 0,

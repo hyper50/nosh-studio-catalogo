@@ -157,7 +157,7 @@ const styles = {
   groupName: {
     background: 'none',
     border: 'none',
-    color: colors.white,
+    color: colors.text,
     fontSize: '14px',
     fontWeight: '500',
     cursor: 'pointer',

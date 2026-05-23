@@ -1,6 +1,7 @@
 import { colors, fonts, radius } from '../../styles/theme';
 import { useAuth } from '../../contexts/AuthContext';
 import { LayoutGrid, Presentation, Settings, LogOut, X } from 'lucide-react';
+import NoshWordmark from '../Common/NoshWordmark';
 
 export default function Sidebar({ isOpen, onClose, currentView, onNavigate }) {
   const { logout, userProfile } = useAuth();
@@ -18,10 +19,7 @@ export default function Sidebar({ isOpen, onClose, currentView, onNavigate }) {
       <div style={styles.overlay} onClick={onClose} />
       <div style={styles.sidebar}>
         <div style={styles.header}>
-          <div>
-            <h2 style={styles.logoText}>NOSH</h2>
-            <p style={styles.logoSubtext}>STUDIO</p>
-          </div>
+          <NoshWordmark color={colors.text} width={140} />
           <button onClick={onClose} style={styles.closeBtn}>
             <X size={20} />
           </button>
@@ -84,7 +82,7 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(28,28,26,0.4)',
     zIndex: 998,
   },
   sidebar: {
@@ -104,23 +102,9 @@ const styles = {
   header: {
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     padding: '24px 20px 16px',
     borderBottom: `1px solid ${colors.border}`,
-  },
-  logoText: {
-    fontSize: '22px',
-    fontWeight: '700',
-    color: colors.white,
-    letterSpacing: '5px',
-    margin: 0,
-  },
-  logoSubtext: {
-    fontSize: '10px',
-    fontWeight: '300',
-    color: colors.textSecondary,
-    letterSpacing: '4px',
-    margin: 0,
   },
   closeBtn: {
     background: 'none',
@@ -140,18 +124,18 @@ const styles = {
     width: '40px',
     height: '40px',
     borderRadius: '50%',
-    backgroundColor: colors.bgTertiary,
+    backgroundColor: colors.bg,
     border: `1px solid ${colors.border}`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: colors.white,
+    color: colors.text,
     fontWeight: '600',
     fontSize: '16px',
     flexShrink: 0,
   },
   userName: {
-    color: colors.white,
+    color: colors.text,
     fontSize: '14px',
     fontWeight: '500',
     margin: 0,
@@ -184,8 +168,8 @@ const styles = {
     transition: 'all 0.15s',
   },
   navItemActive: {
-    backgroundColor: colors.bgTertiary,
-    color: colors.white,
+    backgroundColor: colors.bg,
+    color: colors.text,
   },
   footer: {
     padding: '16px 10px',

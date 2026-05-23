@@ -6,6 +6,7 @@ import SearchBar from '../Common/SearchBar';
 import TagFilter from '../Common/TagFilter';
 import PhotoGrid from '../Gallery/PhotoGrid';
 import PhotoViewer from '../Gallery/PhotoViewer';
+import NoshWordmark from '../Common/NoshWordmark';
 
 export default function PresentationView({ categories, studioSettings }) {
   const [photos, setPhotos] = useState([]);
@@ -50,7 +51,7 @@ export default function PresentationView({ categories, studioSettings }) {
 
   return (
     <div style={styles.container}>
-      {studioSettings?.logoUrl && (
+      {studioSettings?.logoUrl ? (
         <div style={styles.logoBar}>
           <img
             src={studioSettings.logoUrl}
@@ -58,14 +59,9 @@ export default function PresentationView({ categories, studioSettings }) {
             style={styles.logo}
           />
         </div>
-      )}
-
-      {!studioSettings?.logoUrl && (
+      ) : (
         <div style={styles.logoBar}>
-          <div style={styles.textLogo}>
-            <span style={styles.textLogoMain}>NOSH</span>
-            <span style={styles.textLogoSub}>STUDIO</span>
-          </div>
+          <NoshWordmark color={colors.text} width={160} />
         </div>
       )}
 
@@ -117,29 +113,12 @@ const styles = {
     display: 'flex',
     justifyContent: 'center',
     padding: '16px 0 20px',
+    opacity: 0.6,
   },
   logo: {
     height: '32px',
     objectFit: 'contain',
     opacity: 0.7,
-  },
-  textLogo: {
-    display: 'flex',
-    alignItems: 'baseline',
-    gap: '8px',
-    opacity: 0.5,
-  },
-  textLogoMain: {
-    fontSize: '20px',
-    fontWeight: '700',
-    color: colors.white,
-    letterSpacing: '6px',
-  },
-  textLogoSub: {
-    fontSize: '10px',
-    fontWeight: '300',
-    color: colors.textSecondary,
-    letterSpacing: '4px',
   },
   toolbar: {
     display: 'flex',

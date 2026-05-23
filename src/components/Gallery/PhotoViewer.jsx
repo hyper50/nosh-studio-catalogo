@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { colors, fonts, radius } from '../../styles/theme';
+import { colors, fonts } from '../../styles/theme';
 import { X, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 
 export default function PhotoViewer({ photos, currentIndex, onClose, onToggleFeatured, showFeaturedToggle = false }) {
@@ -61,7 +61,7 @@ export default function PhotoViewer({ photos, currentIndex, onClose, onToggleFea
               <Star
                 size={20}
                 fill={photo.featured ? colors.star : 'none'}
-                color={photo.featured ? colors.star : colors.white}
+                color={photo.featured ? colors.star : '#F3F2EF'}
               />
             </button>
           )}
@@ -110,7 +110,7 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.95)',
+    backgroundColor: 'rgba(28,28,26,0.95)',
     zIndex: 2000,
     display: 'flex',
     flexDirection: 'column',
@@ -127,10 +127,10 @@ const styles = {
     left: 0,
     right: 0,
     zIndex: 10,
-    background: 'linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)',
+    background: 'linear-gradient(to bottom, rgba(28,28,26,0.7), transparent)',
   },
   counter: {
-    color: 'rgba(255,255,255,0.7)',
+    color: 'rgba(243,242,239,0.7)',
     fontSize: '14px',
   },
   topActions: {
@@ -140,7 +140,7 @@ const styles = {
   actionBtn: {
     background: 'none',
     border: 'none',
-    color: colors.white,
+    color: '#F3F2EF',
     cursor: 'pointer',
     padding: '8px',
     display: 'flex',
@@ -166,9 +166,9 @@ const styles = {
     position: 'absolute',
     top: '50%',
     transform: 'translateY(-50%)',
-    background: 'rgba(255,255,255,0.1)',
+    background: 'rgba(243,242,239,0.1)',
     border: 'none',
-    color: colors.white,
+    color: '#F3F2EF',
     cursor: 'pointer',
     padding: '12px',
     borderRadius: '50%',
@@ -183,17 +183,17 @@ const styles = {
     left: 0,
     right: 0,
     padding: '20px',
-    background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)',
+    background: 'linear-gradient(to top, rgba(28,28,26,0.7), transparent)',
     textAlign: 'center',
   },
   projectLabel: {
-    color: 'rgba(255,255,255,0.9)',
+    color: 'rgba(243,242,239,0.9)',
     fontSize: '15px',
     fontWeight: '500',
     margin: 0,
   },
   clientLabel: {
-    color: 'rgba(255,255,255,0.5)',
+    color: 'rgba(243,242,239,0.5)',
     fontSize: '13px',
     margin: '4px 0 0 0',
   },

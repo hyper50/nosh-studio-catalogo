@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { colors, fonts, radius, commonStyles } from '../../styles/theme';
+import NoshWordmark from '../Common/NoshWordmark';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -25,16 +26,15 @@ export default function Login() {
     <div style={styles.container}>
       <div style={styles.card}>
         <div style={styles.logoSection}>
-          <h1 style={styles.logoText}>NOSH</h1>
-          <p style={styles.logoSubtext}>STUDIO</p>
+          <NoshWordmark color={colors.black} width={200} />
         </div>
-        <p style={styles.subtitle}>Portfolio Manager</p>
+        <p style={styles.subtitle}>PORTFOLIO MANAGER</p>
 
         <form onSubmit={handleSubmit} style={styles.form}>
           {error && <div style={styles.error}>{error}</div>}
 
           <div style={styles.field}>
-            <label style={styles.label}>Email</label>
+            <label style={styles.label}>EMAIL</label>
             <input
               type="email"
               value={email}
@@ -46,7 +46,7 @@ export default function Login() {
           </div>
 
           <div style={styles.field}>
-            <label style={styles.label}>Contraseña</label>
+            <label style={styles.label}>CONTRASEÑA</label>
             <input
               type="password"
               value={password}
@@ -71,6 +71,8 @@ export default function Login() {
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
+
+        <p style={styles.tagline}>Crafted with quiet precision.</p>
       </div>
     </div>
   );
@@ -87,36 +89,24 @@ const styles = {
     fontFamily: fonts.primary,
   },
   card: {
-    backgroundColor: colors.bgSecondary,
-    borderRadius: radius.lg,
-    border: `1px solid ${colors.border}`,
     padding: '48px 40px',
     width: '100%',
     maxWidth: '400px',
     textAlign: 'center',
   },
   logoSection: {
-    marginBottom: '4px',
-  },
-  logoText: {
-    fontSize: '36px',
-    fontWeight: '700',
-    color: colors.white,
-    letterSpacing: '8px',
-    margin: 0,
-  },
-  logoSubtext: {
-    fontSize: '14px',
-    fontWeight: '300',
-    color: colors.textSecondary,
-    letterSpacing: '6px',
-    margin: 0,
+    marginBottom: '8px',
+    display: 'flex',
+    justifyContent: 'center',
   },
   subtitle: {
-    color: colors.textMuted,
-    fontSize: '13px',
-    marginBottom: '32px',
-    marginTop: '8px',
+    color: colors.taupe,
+    fontSize: '12px',
+    fontWeight: '600',
+    letterSpacing: '0.1em',
+    marginBottom: '36px',
+    marginTop: '4px',
+    fontFamily: fonts.primary,
   },
   form: {
     display: 'flex',
@@ -130,16 +120,24 @@ const styles = {
     gap: '6px',
   },
   label: {
-    fontSize: '13px',
+    fontSize: '12px',
     color: colors.textSecondary,
-    fontWeight: '500',
+    fontWeight: '600',
+    letterSpacing: '0.1em',
+    fontFamily: fonts.primary,
   },
   error: {
-    backgroundColor: 'rgba(231, 76, 60, 0.15)',
+    backgroundColor: 'rgba(163, 56, 42, 0.08)',
     border: `1px solid ${colors.danger}`,
     color: colors.danger,
     padding: '10px 14px',
-    borderRadius: radius.sm,
     fontSize: '13px',
+  },
+  tagline: {
+    color: colors.taupe,
+    fontSize: '11px',
+    letterSpacing: '0.02em',
+    marginTop: '32px',
+    fontFamily: fonts.primary,
   },
 };

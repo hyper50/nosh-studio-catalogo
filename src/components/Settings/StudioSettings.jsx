@@ -98,7 +98,7 @@ export default function StudioSettings({ settings, onUpdate }) {
           />
         </div>
         <p style={styles.hint}>
-          Recomendación: logo apaisado en formato PNG con fondo transparente, colores claros para que se vea bien sobre fondo oscuro.
+          Recomendación: logo apaisado en formato PNG con fondo transparente.
         </p>
       </div>
     </div>

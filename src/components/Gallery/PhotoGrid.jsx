@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { colors, radius } from '../../styles/theme';
+import { colors, radius, fonts } from '../../styles/theme';
 import { Star, Check } from 'lucide-react';
 
 export default function PhotoGrid({
@@ -84,19 +84,19 @@ const styles = {
   grid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-    gap: '12px',
+    gap: '10px',
     padding: '0',
   },
   card: {
     borderRadius: radius.md,
     overflow: 'hidden',
     backgroundColor: colors.bgCard,
-    border: `2px solid transparent`,
+    border: '2px solid transparent',
     cursor: 'pointer',
     transition: 'all 0.2s',
   },
   cardSelected: {
-    borderColor: colors.white,
+    borderColor: colors.black,
   },
   imageWrapper: {
     position: 'relative',
@@ -117,7 +117,7 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    background: 'rgba(0,0,0,0.3)',
+    background: 'rgba(28,28,26,0.25)',
     display: 'flex',
     padding: '8px',
   },
@@ -125,41 +125,44 @@ const styles = {
     width: '24px',
     height: '24px',
     borderRadius: '50%',
-    border: `2px solid ${colors.white}`,
+    border: '2px solid #F3F2EF',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: colors.white,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    color: '#F3F2EF',
+    backgroundColor: 'rgba(28,28,26,0.4)',
   },
   checkboxActive: {
-    backgroundColor: colors.white,
-    color: colors.bg,
+    backgroundColor: colors.black,
+    borderColor: colors.black,
+    color: '#F3F2EF',
   },
   starBadge: {
     position: 'absolute',
     top: '8px',
     right: '8px',
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(28,28,26,0.6)',
     borderRadius: '50%',
     padding: '4px',
     display: 'flex',
   },
   info: {
-    padding: '10px 12px',
+    padding: '8px 4px',
   },
   projectName: {
     color: colors.text,
-    fontSize: '13px',
+    fontSize: '12px',
     fontWeight: '500',
     margin: 0,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+    fontFamily: fonts.primary,
   },
   clientName: {
     color: colors.textMuted,
     fontSize: '11px',
     margin: '2px 0 0 0',
+    fontFamily: fonts.primary,
   },
 };

@@ -102,8 +102,8 @@ const styles = {
     transition: 'all 0.15s',
   },
   tabActive: {
-    color: colors.white,
-    borderBottomColor: colors.white,
+    color: colors.text,
+    borderBottomColor: colors.text,
   },
   tabLabel: {},
   content: {

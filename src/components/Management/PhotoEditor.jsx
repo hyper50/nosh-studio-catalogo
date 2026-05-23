@@ -62,7 +62,6 @@ export default function PhotoEditor({ photo, categories, onSave, onDelete, onClo
   return (
     <div style={commonStyles.modal} onClick={onClose}>
       <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
-        {/* Imagen — grande a la izquierda en desktop, arriba en móvil */}
         <div style={isMobile ? styles.imageSectionMobile : styles.imageSection}>
           <img
             src={photo.url || photo.thumbnailUrl}
@@ -71,7 +70,6 @@ export default function PhotoEditor({ photo, categories, onSave, onDelete, onClo
           />
         </div>
 
-        {/* Formulario a la derecha */}
         <div style={isMobile ? styles.formSectionMobile : styles.formSection}>
           <div style={styles.header}>
             <h3 style={styles.title}>Editar foto</h3>
@@ -81,7 +79,7 @@ export default function PhotoEditor({ photo, categories, onSave, onDelete, onClo
           </div>
 
           <div style={styles.field}>
-            <label style={styles.label}>Proyecto</label>
+            <label style={styles.label}>PROYECTO</label>
             <input
               type="text"
               value={projectName}
@@ -91,7 +89,7 @@ export default function PhotoEditor({ photo, categories, onSave, onDelete, onClo
           </div>
 
           <div style={styles.field}>
-            <label style={styles.label}>Cliente</label>
+            <label style={styles.label}>CLIENTE</label>
             <input
               type="text"
               value={clientName}
@@ -104,15 +102,15 @@ export default function PhotoEditor({ photo, categories, onSave, onDelete, onClo
             onClick={() => setFeatured(!featured)}
             style={{
               ...commonStyles.chip,
-              ...(featured ? { backgroundColor: colors.star, color: colors.bg, borderColor: colors.star } : {}),
+              ...(featured ? { backgroundColor: colors.star, color: '#F3F2EF', borderColor: colors.star } : {}),
             }}
           >
-            <Star size={12} fill={featured ? colors.bg : 'none'} />
+            <Star size={12} fill={featured ? '#F3F2EF' : 'none'} />
             Destacada
           </button>
 
           <div style={styles.tagSection}>
-            <label style={styles.label}>Etiquetas</label>
+            <label style={styles.label}>ETIQUETAS</label>
             <div style={styles.tagGroups}>
               {categories.map((cat) => (
                 <div key={cat.name} style={styles.tagGroup}>
@@ -170,7 +168,6 @@ export default function PhotoEditor({ photo, categories, onSave, onDelete, onClo
 }
 
 const styles = {
-  /* Desktop: imagen ocupa toda la mitad izquierda */
   imageSection: {
     flex: '0 0 55%',
     backgroundColor: colors.bg,
@@ -187,21 +184,17 @@ const styles = {
     objectFit: 'contain',
     maxHeight: '85vh',
   },
-  /* Móvil: imagen arriba, más compacta */
   imageSectionMobile: {
     width: '100%',
     maxHeight: '200px',
     overflow: 'hidden',
-    borderRadius: radius.sm,
     marginBottom: '12px',
   },
   imageMobile: {
     width: '100%',
     height: '200px',
     objectFit: 'cover',
-    borderRadius: radius.sm,
   },
-  /* Desktop: formulario a la derecha con scroll */
   formSection: {
     flex: 1,
     display: 'flex',
@@ -212,7 +205,6 @@ const styles = {
     overflowY: 'auto',
     maxHeight: '85vh',
   },
-  /* Móvil: formulario debajo */
   formSectionMobile: {
     display: 'flex',
     flexDirection: 'column',
@@ -224,9 +216,9 @@ const styles = {
     alignItems: 'center',
   },
   title: {
-    color: colors.white,
+    color: colors.text,
     fontSize: '16px',
-    fontWeight: '600',
+    fontWeight: '500',
     margin: 0,
     fontFamily: fonts.primary,
   },
@@ -242,10 +234,11 @@ const styles = {
     gap: '4px',
   },
   label: {
-    fontSize: '12px',
+    fontSize: '11px',
     color: colors.textSecondary,
-    fontWeight: '500',
+    fontWeight: '600',
     fontFamily: fonts.primary,
+    letterSpacing: '0.1em',
   },
   tagSection: {
     flex: 1,
