@@ -6,6 +6,7 @@ import { defaultCategories } from './utils/defaultCategories';
 import { colors, fonts } from './styles/theme';
 
 import Login from './components/Auth/Login';
+import NoshWordmark from './components/Common/NoshWordmark';
 import Navbar from './components/Layout/Navbar';
 import Sidebar from './components/Layout/Sidebar';
 import ManagementView from './components/Management/ManagementView';
@@ -103,9 +104,8 @@ function AppContent() {
   if (loading) {
     return (
       <div style={styles.loadingScreen}>
-        <div>
-          <h1 style={styles.loadingText}>NOSH</h1>
-          <p style={styles.loadingSubtext}>STUDIO</p>
+        <div style={styles.loadingInner}>
+          <NoshWordmark color={colors.black} width={180} />
         </div>
       </div>
     );
@@ -180,18 +180,9 @@ const styles = {
     fontFamily: fonts.primary,
     textAlign: 'center',
   },
-  loadingText: {
-    fontSize: '36px',
-    fontWeight: '700',
-    color: colors.white,
-    letterSpacing: '8px',
-    margin: 0,
-  },
-  loadingSubtext: {
-    fontSize: '14px',
-    fontWeight: '300',
-    color: colors.textSecondary,
-    letterSpacing: '6px',
-    margin: 0,
+  loadingInner: {
+    display: 'flex',
+    justifyContent: 'center',
+    opacity: 0.85,
   },
 };
