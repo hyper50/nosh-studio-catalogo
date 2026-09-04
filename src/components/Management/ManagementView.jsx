@@ -5,7 +5,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useAuth } from '../../contexts/AuthContext';
-import { compressImage, generateThumbnail } from '../../utils/imageCompressor';
+import { compressImage, generateThumbnail, safeFilename } from '../../utils/imageCompressor';
 import { colors, fonts, commonStyles } from '../../styles/theme';
 import SearchBar from '../Common/SearchBar';
 import TagFilter from '../Common/TagFilter';
@@ -62,27 +62,60 @@ export default function ManagementView({ categories }) {
 
   async function handleUpload(files, metadata, onProgress) {
     const total = files.length;
+    // Tres subidas por foto: miniatura, pantalla y original.
+    const stepsPerFile = 3;
+    const totalSteps = total * stepsPerFile;
+    let done = 0;
+    const advance = () => {
+      done += 1;
+      onProgress((done / totalSteps) * 100);
+    };
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const compressed = await compressImage(file);
       const thumbnail = await generateThumbnail(file);
+
       const timestamp = Date.now();
-      const filename = `${timestamp}_${i}_${file.name}`;
+      const cleanName = safeFilename(file.name);
+      const base = `${timestamp}_${i}_${cleanName}`;
 
-      const mainRef = ref(storage, `photos/${filename}`);
-      const thumbRef = ref(storage, `thumbnails/${filename}`);
+      const paths = {
+        photo: `photos/${base}`,
+        thumbnail: `thumbnails/${base}`,
+        original: `originals/${base}`,
+      };
 
-      await uploadBytes(mainRef, compressed);
-      await uploadBytes(thumbRef, thumbnail);
+      // Miniatura primero: es la que aparece antes en la galería.
+      await uploadBytes(ref(storage, paths.thumbnail), thumbnail);
+      advance();
 
-      const url = await getDownloadURL(mainRef);
-      const thumbnailUrl = await getDownloadURL(thumbRef);
+      await uploadBytes(ref(storage, paths.photo), compressed);
+      advance();
+
+      // El original se marca como adjunto para que el navegador
+      // lo descargue en lugar de abrirlo.
+      await uploadBytes(ref(storage, paths.original), file, {
+        contentType: file.type || 'application/octet-stream',
+        contentDisposition: `attachment; filename="${cleanName}"`,
+      });
+      advance();
+
+      const [thumbnailUrl, url, originalUrl] = await Promise.all([
+        getDownloadURL(ref(storage, paths.thumbnail)),
+        getDownloadURL(ref(storage, paths.photo)),
+        getDownloadURL(ref(storage, paths.original)),
+      ]);
 
       await addDoc(collection(db, 'photos'), {
         url,
         thumbnailUrl,
-        storagePath: `photos/${filename}`,
-        thumbnailPath: `thumbnails/${filename}`,
+        originalUrl,
+        storagePath: paths.photo,
+        thumbnailPath: paths.thumbnail,
+        originalPath: paths.original,
+        originalName: file.name,
+        originalSize: file.size,
         projectName: metadata.projectName || '',
         clientName: metadata.clientName || '',
         tags: metadata.tags || [],
@@ -91,8 +124,6 @@ export default function ManagementView({ categories }) {
         uploadedBy: currentUser.uid,
         createdAt: new Date().toISOString(),
       });
-
-      onProgress(((i + 1) / total) * 100);
     }
   }
 

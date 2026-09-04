@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { colors, fonts, radius, commonStyles } from '../../styles/theme';
-import { X, Save, Trash2, Star } from 'lucide-react';
+import { X, Save, Trash2, Star, Download } from 'lucide-react';
+import { formatBytes } from '../../utils/imageCompressor';
 
 export default function PhotoEditor({ photo, categories, onSave, onDelete, onClose }) {
   const [projectName, setProjectName] = useState(photo.projectName || '');
@@ -135,6 +136,18 @@ export default function PhotoEditor({ photo, categories, onSave, onDelete, onClo
             </div>
           </div>
 
+          {photo.originalUrl && (
+            <a
+              href={photo.originalUrl}
+              download={photo.originalName || ''}
+              style={styles.downloadLink}
+            >
+              <Download size={13} />
+              Descargar original
+              {photo.originalSize ? ` · ${formatBytes(photo.originalSize)}` : ''}
+            </a>
+          )}
+
           <div style={styles.actions}>
             <button
               onClick={handleDelete}
@@ -265,6 +278,19 @@ const styles = {
     display: 'flex',
     flexWrap: 'wrap',
     gap: '4px',
+  },
+  downloadLink: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    fontSize: '12px',
+    color: colors.textSecondary,
+    textDecoration: 'none',
+    fontFamily: fonts.primary,
+    border: `1px solid ${colors.border}`,
+    padding: '7px 12px',
+    alignSelf: 'flex-start',
+    letterSpacing: '0.02em',
   },
   actions: {
     display: 'flex',

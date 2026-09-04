@@ -39,15 +39,15 @@ export default function TrashBin() {
     const photo = deletedPhotos.find((p) => p.id === photoId);
     if (!photo) return;
 
-    try {
-      if (photo.storagePath) {
-        await deleteObject(ref(storage, photo.storagePath));
+    // Cada foto puede tener hasta tres archivos en Storage.
+    // Se borran por separado: si uno falla, los demás siguen.
+    for (const path of [photo.storagePath, photo.thumbnailPath, photo.originalPath]) {
+      if (!path) continue;
+      try {
+        await deleteObject(ref(storage, path));
+      } catch (e) {
+        console.error(`No se pudo borrar ${path}:`, e);
       }
-      if (photo.thumbnailPath) {
-        await deleteObject(ref(storage, photo.thumbnailPath));
-      }
-    } catch (e) {
-      console.error('Error deleting from storage:', e);
     }
 
     await deleteDoc(doc(db, 'photos', photoId));

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { colors, fonts } from '../../styles/theme';
-import { X, ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Star, Download } from 'lucide-react';
 
 export default function PhotoViewer({ photos, currentIndex, onClose, onToggleFeatured, showFeaturedToggle = false }) {
   const [index, setIndex] = useState(currentIndex);
@@ -53,6 +53,16 @@ export default function PhotoViewer({ photos, currentIndex, onClose, onToggleFea
           {index + 1} / {photos.length}
         </div>
         <div style={styles.topActions}>
+          {photo.originalUrl && (
+            <a
+              href={photo.originalUrl}
+              download={photo.originalName || ''}
+              style={styles.actionBtn}
+              title="Descargar original"
+            >
+              <Download size={20} />
+            </a>
+          )}
           {showFeaturedToggle && onToggleFeatured && (
             <button
               onClick={() => onToggleFeatured(photo.id)}
