@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { db, storage } from '../../firebase';
-import { collection, query, where, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { ref, deleteObject } from 'firebase/storage';
+import { db } from '../../firebase';
+import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { deletePhotoForever, trashCutoff } from '../../utils/trashCleanup';
 import { colors, fonts, radius, commonStyles } from '../../styles/theme';
 import { Trash2, RotateCcw, AlertTriangle } from 'lucide-react';
 
@@ -17,12 +17,8 @@ export default function TrashBin() {
     const q = query(collection(db, 'photos'), where('deleted', '==', true));
     const snap = await getDocs(q);
     const photos = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-    // Filter to last 30 days
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const recent = photos.filter(
-      (p) => new Date(p.deletedAt) > thirtyDaysAgo
-    );
+    const cutoff = trashCutoff();
+    const recent = photos.filter((p) => new Date(p.deletedAt) > cutoff);
     setDeletedPhotos(recent);
     setLoading(false);
   }
@@ -39,18 +35,7 @@ export default function TrashBin() {
     const photo = deletedPhotos.find((p) => p.id === photoId);
     if (!photo) return;
 
-    // Cada foto puede tener hasta tres archivos en Storage.
-    // Se borran por separado: si uno falla, los demás siguen.
-    for (const path of [photo.storagePath, photo.thumbnailPath, photo.originalPath]) {
-      if (!path) continue;
-      try {
-        await deleteObject(ref(storage, path));
-      } catch (e) {
-        console.error(`No se pudo borrar ${path}:`, e);
-      }
-    }
-
-    await deleteDoc(doc(db, 'photos', photoId));
+    await deletePhotoForever(photo, { force: true });
     setDeletedPhotos((prev) => prev.filter((p) => p.id !== photoId));
   }
 

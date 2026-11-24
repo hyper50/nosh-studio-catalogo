@@ -36,7 +36,7 @@ npm run dev
 npm run build   # comprobar siempre antes de subir
 ```
 
-`npm run lint` da cuatro errores de imports sin usar en `ManagementView.jsx` que ya estaban; no son de tu cambio.
+`npm run lint` da errores que ya estaban: imports sin usar en `ManagementView.jsx` y "accessed before it is declared" (`react-hooks/immutability`) en `App.jsx` y `TrashBin.jsx`. No son de tu cambio.
 
 ## Datos
 
@@ -57,7 +57,7 @@ Las reglas de Firestore y de Storage exigen usuario autenticado para leer y escr
 
 **El orden es manual y compartido.** `src/utils/photoOrder.js` ordena por una clave numérica: el campo `order` si existe, o la fecha de subida en milisegundos si no. Clave más alta, más arriba. Así las fotos antiguas, que no tienen `order`, conservan su sitio sin migración. Arrastrar una foto en Gestión le asigna una clave a medio camino entre sus nuevas vecinas, con una sola escritura; si no queda hueco, se renumeran todas. Las tandas nuevas entran arriba en el orden en que se seleccionaron los archivos. El orden de Presentación es el mismo. El arrastre usa la API nativa de arrastrar y soltar, que no funciona en pantallas táctiles; se dejó así a propósito porque Gestión se usa en escritorio.
 
-**Borrar es mover a la papelera.** `deleted: true` y `deletedAt`. Las vistas filtran las borradas en el cliente. La papelera muestra solo las de los últimos 30 días, pero nada las elimina de verdad pasado ese plazo: las más antiguas siguen en Firestore y en Storage sin verse. Arreglar esto es la primera tarea pendiente.
+**Borrar es mover a la papelera.** `deleted: true` y `deletedAt`. Las vistas filtran las borradas en el cliente. La papelera muestra solo las de los últimos 30 días. Las más antiguas se eliminan de verdad (documento y tres archivos) con `purgeExpiredTrash` en `src/utils/trashCleanup.js`, que se lanza en segundo plano cada vez que alguien inicia sesión. Moisés eligió esto frente a una función programada para no montar backend. Si falla el borrado de algún archivo, el documento se conserva y se reintenta en el siguiente inicio de sesión.
 
 **`colors.white` no es blanco.** La app nació con tema oscuro y se pasó a claro cambiando los valores del tema. `colors.white` quedó como "color de énfasis" y vale negro cálido. En código nuevo usa `colors.text`, `colors.black` o `colors.paper`, que dicen lo que son. Sobre fondos oscuros (barra superior, visor a pantalla completa) el texto claro se escribe con `colors.navText` o `#F3F2EF`.
 
@@ -81,13 +81,12 @@ Subido y desplegado: rediseño de marca, editor de foto en dos columnas, origina
 Hecho y pendiente de comprobar en la app real:
 
 - **Reordenar arrastrando.** La lógica de `photoOrder.js` está probada aparte (mover arriba, abajo, a los extremos, con filtros, movimientos repetidos). El arrastre en el navegador no se ha probado con sesión iniciada. Comprueba que una foto movida se queda en su sitio tras recargar.
+- **Borrado automático de la papelera.** No se ha probado con sesión iniciada. Comprueba en la consola de Firebase que las fotos borradas hace más de 30 días desaparecen de `photos` y de Storage tras abrir la app.
 - **Subida con original.** Moisés actualizó las reglas de Storage pero aún no había subido una foto de prueba. Comprueba que la barra llega al final y que aparece "Descargar original" con el peso.
 
 ## Pendiente
 
-Aprobado, por hacer:
-
-1. **Borrado automático de la papelera a los 30 días.** Debe eliminar el documento y los tres archivos. Sin Cloud Functions, lo más simple es limpiar las caducadas cuando un usuario abre la app o la papelera; una función programada sería más fiable pero añade despliegue de backend. Propónle la opción antes de montar backend.
+Aprobado, por hacer: nada.
 
 Aplazado por Moisés, no empezar sin que lo pida:
 

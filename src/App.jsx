@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { db } from './firebase';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { defaultCategories } from './utils/defaultCategories';
+import { purgeExpiredTrash } from './utils/trashCleanup';
 import { colors, fonts } from './styles/theme';
 
 import Login from './components/Auth/Login';
@@ -24,6 +25,8 @@ function AppContent() {
   useEffect(() => {
     if (currentUser) {
       loadAppData();
+      // Vacía en segundo plano lo que lleva más de 30 días en la papelera.
+      purgeExpiredTrash().catch((err) => console.error('Error limpiando la papelera:', err));
     }
   }, [currentUser]);
 
