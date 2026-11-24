@@ -3,6 +3,7 @@ import { db } from '../../firebase';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { colors, fonts } from '../../styles/theme';
 import { sortPhotos } from '../../utils/photoOrder';
+import { filterPhotos, photoCountLabel } from '../../utils/search';
 import SearchBar from '../Common/SearchBar';
 import TagFilter from '../Common/TagFilter';
 import PhotoGrid from '../Gallery/PhotoGrid';
@@ -35,18 +36,7 @@ export default function PresentationView({ categories, studioSettings }) {
     );
   }
 
-  const filteredPhotos = photos.filter((photo) => {
-    if (showFeatured && !photo.featured) return false;
-    if (selectedTags.length > 0 && !selectedTags.some((t) => photo.tags?.includes(t))) return false;
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      const matchName = photo.projectName?.toLowerCase().includes(q);
-      const matchClient = photo.clientName?.toLowerCase().includes(q);
-      const matchTag = photo.tags?.some((t) => t.toLowerCase().includes(q));
-      if (!matchName && !matchClient && !matchTag) return false;
-    }
-    return true;
-  });
+  const filteredPhotos = filterPhotos(photos, { searchQuery, selectedTags, showFeatured });
 
   const viewerIndex = viewerPhoto ? filteredPhotos.findIndex((p) => p.id === viewerPhoto.id) : -1;
 
@@ -72,13 +62,20 @@ export default function PresentationView({ categories, studioSettings }) {
           onChange={setSearchQuery}
           placeholder="Buscar proyecto, cliente o etiqueta..."
         />
-        <TagFilter
-          categories={categories}
-          selectedTags={selectedTags}
-          onToggleTag={toggleTag}
-          showFeatured={showFeatured}
-          onToggleFeatured={() => setShowFeatured(!showFeatured)}
-        />
+        <div style={styles.filterRow}>
+          <TagFilter
+            categories={categories}
+            selectedTags={selectedTags}
+            onToggleTag={toggleTag}
+            showFeatured={showFeatured}
+            onToggleFeatured={() => setShowFeatured(!showFeatured)}
+          />
+          {!loading && (
+            <span style={styles.count}>
+              {photoCountLabel(filteredPhotos.length, photos.length)}
+            </span>
+          )}
+        </div>
       </div>
 
       {loading ? (
@@ -121,11 +118,31 @@ const styles = {
     objectFit: 'contain',
     opacity: 0.7,
   },
+  // Buscador y filtros se quedan a la vista, pegados bajo la barra superior.
   toolbar: {
+    position: 'sticky',
+    top: '52px',
+    zIndex: 40,
+    backgroundColor: colors.bg,
+    margin: '0 -16px 16px',
+    padding: '12px 16px',
+    borderBottom: `1px solid ${colors.borderLight}`,
     display: 'flex',
     flexDirection: 'column',
-    gap: '12px',
-    marginBottom: '20px',
+    gap: '10px',
+  },
+  filterRow: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: '16px',
+  },
+  count: {
+    flexShrink: 0,
+    fontSize: '12px',
+    color: colors.textMuted,
+    paddingTop: '6px',
+    whiteSpace: 'nowrap',
   },
   loading: {
     textAlign: 'center',

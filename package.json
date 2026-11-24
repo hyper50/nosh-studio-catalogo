@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dev:mock": "vite --config dev/vite.mock.config.js"
   },
   "dependencies": {
     "browser-image-compression": "^2.0.2",

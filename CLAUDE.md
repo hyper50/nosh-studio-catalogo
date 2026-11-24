@@ -36,7 +36,9 @@ npm run dev
 npm run build   # comprobar siempre antes de subir
 ```
 
-`npm run lint` da errores que ya estaban: imports sin usar en `ManagementView.jsx` y "accessed before it is declared" (`react-hooks/immutability`) en `App.jsx` y `TrashBin.jsx`. No son de tu cambio.
+`npm run lint` da una veintena de errores que ya estaban (imports y variables sin usar en Ajustes, `Login`, `Navbar` y `PhotoEditor`; "accessed before it is declared" en `App.jsx`, `TrashBin.jsx` y `UsersManager.jsx`). No son de tu cambio; el código nuevo debe pasar limpio.
+
+**Vista previa con datos de mentira.** Como no puedes iniciar sesión con la cuenta del estudio, `npm run dev:mock` arranca la app real en el puerto 5199 con Firebase sustituido por una imitación en memoria (`dev/mocks/`): 46 fotos de ejemplo, categorías, una papelera con una foto reciente y otra caducada. Sirve para probar en el navegador cualquier cambio antes de subirlo. Un archivo cuyo nombre contenga "falla" es rechazado al subir, para probar los avisos de error; `window.__mockStore` deja inspeccionar los datos. Lo que no imita: reglas de seguridad, descargas reales y tiempos de red. Si añades una operación nueva de Firestore, amplía el mock.
 
 ## Datos
 
@@ -59,6 +61,16 @@ Las reglas de Firestore y de Storage exigen usuario autenticado para leer y escr
 
 **Borrar es mover a la papelera.** `deleted: true` y `deletedAt`. Las vistas filtran las borradas en el cliente. La papelera muestra solo las de los últimos 30 días. Las más antiguas se eliminan de verdad (documento y tres archivos) con `purgeExpiredTrash` en `src/utils/trashCleanup.js`, que se lanza en segundo plano cada vez que alguien inicia sesión. Moisés eligió esto frente a una función programada para no montar backend. Si falla el borrado de algún archivo, el documento se conserva y se reintenta en el siguiente inicio de sesión.
 
+**Buscar y filtrar vive en `src/utils/search.js`** y lo comparten Gestión y Presentación. La búsqueda parte el texto en palabras y exige que estén todas, en cualquier orden y sin mirar tildes ni mayúsculas, entre proyecto, cliente y etiquetas. Las etiquetas marcadas en los filtros se suman: la foto tiene que llevarlas todas (antes bastaba con una). Las etiquetas se muestran en orden alfabético dentro de su categoría en toda la app; el orden se calcula al pintar (`withSortedTags` en `App.jsx`), no se guarda.
+
+**Las etiquetas son texto dentro de cada foto.** No hay identificadores: `photos.tags` guarda los nombres. Por eso cambiar el nombre de una etiqueta (`handleRenameTag` en `App.jsx`) reescribe todas las fotos que la llevan, incluidas las de la papelera, y solo después la lista de categorías. Borrar una etiqueta o una categoría en Ajustes, en cambio, no la quita de las fotos.
+
+**Acciones con varias fotos.** En Gestión, "Seleccionar" abre una barra fija al pie (`Management/SelectionBar.jsx`) con etiquetar, destacar, descargar originales y eliminar (a la papelera). La descarga múltiple carga cada original en un marco oculto, aprovechando que se guardaron como adjunto; así no hace falta configurar CORS en el almacén. Un ZIP sí lo exigiría.
+
+**Subidas que fallan.** `handleUpload` sube foto a foto; si una falla, borra sus archivos a medias y lanza un error con un mensaje para el usuario y `uploadedCount`. El modal lo muestra y deja en la lista solo las que faltan.
+
+**Zoom.** La página permite ampliar con los dedos (se quitó `user-scalable=no`). El visor no cambia de foto al deslizar mientras la vista está ampliada.
+
 **`colors.white` no es blanco.** La app nació con tema oscuro y se pasó a claro cambiando los valores del tema. `colors.white` quedó como "color de énfasis" y vale negro cálido. En código nuevo usa `colors.text`, `colors.black` o `colors.paper`, que dicen lo que son. Sobre fondos oscuros (barra superior, visor a pantalla completa) el texto claro se escribe con `colors.navText` o `#F3F2EF`.
 
 ## Marca
@@ -78,7 +90,14 @@ Si Moisés tiene instalada la skill `ns-identidad-marca`, es la referencia compl
 
 Subido y desplegado: rediseño de marca, editor de foto en dos columnas, originales en alta calidad con descarga.
 
+Subido el 24 de noviembre de 2026, probado con la vista de datos de mentira pero no con la cuenta real: búsqueda por palabras, filtros que se suman, etiquetas alfabéticas, contador de fotos, siete columnas, nombre sobre la miniatura, buscador fijo, barra de selección (etiquetar, destacar, descargar, eliminar varias), cambio de nombre de etiquetas, avisos de fallo al subir y zoom en tablet.
+
+Decidido por Moisés: el botón de descargar el original se queda también en Presentación.
+
 Hecho y pendiente de comprobar en la app real:
+
+- **Descarga de varios originales.** Solo se puede comprobar con fotos reales: el navegador debe preguntar una vez si permite varias descargas y bajar un archivo por foto.
+- **Zoom con los dedos en tablet**, dentro del visor.
 
 - **Reordenar arrastrando.** La lógica de `photoOrder.js` está probada aparte (mover arriba, abajo, a los extremos, con filtros, movimientos repetidos). El arrastre en el navegador no se ha probado con sesión iniciada. Comprueba que una foto movida se queda en su sitio tras recargar.
 - **Borrado automático de la papelera.** No se ha probado con sesión iniciada. Comprueba en la consola de Firebase que las fotos borradas hace más de 30 días desaparecen de `photos` y de Storage tras abrir la app.
@@ -87,6 +106,12 @@ Hecho y pendiente de comprobar en la app real:
 ## Pendiente
 
 Aprobado, por hacer: nada.
+
+Recomendaciones que Moisés aún no ha leído (se las propuse el 24 de noviembre de 2026; no empezar hasta que las apruebe):
+
+- **Registro posiblemente abierto.** Las reglas dejan leer y borrar todo a cualquier usuario con sesión. Si la creación de cuentas sigue activada en Firebase (Authentication → Settings → User actions), un desconocido podría crearse una. Solo él puede comprobarlo en la consola.
+- **Borrar una categoría no pide confirmación**, y las etiquetas borradas se quedan en las fotos.
+- **Seleccionar todas las fotos del filtro** y **cambiar proyecto o cliente a varias a la vez.**
 
 Aplazado por Moisés, no empezar sin que lo pida:
 

@@ -64,7 +64,6 @@ export default function PhotoGrid({
             {...dragProps}
             style={{
               ...styles.card,
-              ...(isSelected ? styles.cardSelected : {}),
               ...(canReorder ? styles.cardDraggable : {}),
               ...(isDragged ? styles.cardDragged : {}),
             }}
@@ -96,8 +95,23 @@ export default function PhotoGrid({
                 draggable={false}
               />
 
-              {(isHovered || isSelected) && !draggedId && (
-                <div style={styles.overlay}>
+              {showManagement && photo.projectName && (
+                <div style={styles.info}>
+                  <p style={styles.projectName}>{photo.projectName}</p>
+                  {photo.clientName && (
+                    <p style={styles.clientName}>{photo.clientName}</p>
+                  )}
+                </div>
+              )}
+
+              {(selectable || isHovered) && !draggedId && (
+                <div
+                  style={{
+                    ...styles.overlay,
+                    ...(isHovered ? styles.overlayHover : {}),
+                    ...(isSelected ? styles.overlaySelected : {}),
+                  }}
+                >
                   {selectable && (
                     <div
                       style={{
@@ -117,15 +131,6 @@ export default function PhotoGrid({
                 </div>
               )}
             </div>
-
-            {showManagement && photo.projectName && (
-              <div style={styles.info}>
-                <p style={styles.projectName}>{photo.projectName}</p>
-                {photo.clientName && (
-                  <p style={styles.clientName}>{photo.clientName}</p>
-                )}
-              </div>
-            )}
           </div>
         );
       })}
@@ -136,20 +141,17 @@ export default function PhotoGrid({
 const styles = {
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+    // 180 px de mínimo: siete columnas en el ancho completo de la app.
+    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
     gap: '10px',
     padding: '0',
   },
   card: {
     position: 'relative',
     borderRadius: radius.md,
-    backgroundColor: colors.bgCard,
-    border: '2px solid transparent',
+    backgroundColor: colors.borderLight,
     cursor: 'pointer',
-    transition: 'opacity 0.15s, border-color 0.2s',
-  },
-  cardSelected: {
-    borderColor: colors.black,
+    transition: 'opacity 0.15s',
   },
   cardDraggable: {
     cursor: 'grab',
@@ -185,9 +187,16 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    background: 'rgba(28,28,26,0.25)',
     display: 'flex',
     padding: '8px',
+  },
+  overlayHover: {
+    background: 'rgba(28,28,26,0.18)',
+  },
+  // El marco de la foto elegida se dibuja por dentro para no mover la cuadrícula.
+  overlaySelected: {
+    background: 'rgba(28,28,26,0.10)',
+    boxShadow: `inset 0 0 0 3px ${colors.black}`,
   },
   checkbox: {
     width: '24px',
@@ -202,7 +211,7 @@ const styles = {
   },
   checkboxActive: {
     backgroundColor: colors.black,
-    borderColor: colors.black,
+    borderColor: '#F3F2EF',
     color: '#F3F2EF',
   },
   starBadge: {
@@ -214,13 +223,22 @@ const styles = {
     padding: '4px',
     display: 'flex',
   },
+  // Nombre del proyecto sobre la propia foto, en una franja oscura que se funde.
   info: {
-    padding: '8px 4px',
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    padding: '30px 10px 9px',
+    background:
+      'linear-gradient(to top, rgba(28,28,26,0.88) 0%, rgba(28,28,26,0.62) 55%, rgba(28,28,26,0) 100%)',
+    pointerEvents: 'none',
   },
   projectName: {
-    color: colors.text,
+    color: '#F3F2EF',
     fontSize: '12px',
     fontWeight: '500',
+    letterSpacing: '0.01em',
     margin: 0,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
@@ -228,9 +246,12 @@ const styles = {
     fontFamily: fonts.primary,
   },
   clientName: {
-    color: colors.textMuted,
+    color: 'rgba(243,242,239,0.72)',
     fontSize: '11px',
     margin: '2px 0 0 0',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
     fontFamily: fonts.primary,
   },
 };

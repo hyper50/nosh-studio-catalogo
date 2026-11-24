@@ -1,10 +1,14 @@
 import { useState, useRef } from 'react';
 import { colors, fonts, radius, commonStyles } from '../../styles/theme';
-import { Upload, X, Image, Plus, Trash2 } from 'lucide-react';
+import { Upload, X, Plus, Trash2, AlertTriangle } from 'lucide-react';
+
+const MAX_ORIGINAL_BYTES = 50 * 1024 * 1024;
 
 export default function UploadModal({ categories, onUpload, onClose }) {
-  const [files, setFiles] = useState([]);
-  const [previews, setPreviews] = useState([]);
+  // Cada elemento lleva el archivo y su vista previa juntos, para que
+  // quitar o reintentar no los descuadre.
+  const [items, setItems] = useState([]);
+  const [error, setError] = useState('');
   const [projectName, setProjectName] = useState('');
   const [clientName, setClientName] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);
@@ -15,21 +19,31 @@ export default function UploadModal({ categories, onUpload, onClose }) {
   const dragCounter = useRef(0);
 
   function addFiles(newFiles) {
-    const imageFiles = newFiles.filter((f) => f.type.startsWith('image/'));
-    if (imageFiles.length === 0) return;
-    setFiles((prev) => [...prev, ...imageFiles]);
+    const images = newFiles.filter(
+      (f) => f.type.startsWith('image/') || /\.(heic|heif)$/i.test(f.name)
+    );
+    const tooBig = images.filter((f) => f.size > MAX_ORIGINAL_BYTES);
+    const accepted = images.filter((f) => f.size <= MAX_ORIGINAL_BYTES);
 
-    imageFiles.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        setPreviews((prev) => [...prev, { name: file.name, url: ev.target.result }]);
-      };
-      reader.readAsDataURL(file);
-    });
+    if (tooBig.length > 0) {
+      setError(
+        `${tooBig.map((f) => `«${f.name}»`).join(', ')} supera${tooBig.length === 1 ? '' : 'n'} los 50 MB y no se puede${tooBig.length === 1 ? '' : 'n'} subir.`
+      );
+    } else if (accepted.length > 0) {
+      setError('');
+    }
+    if (accepted.length === 0) return;
+
+    setItems((prev) => [
+      ...prev,
+      ...accepted.map((file) => ({ file, url: URL.createObjectURL(file) })),
+    ]);
   }
 
   function handleFileSelect(e) {
     addFiles(Array.from(e.target.files));
+    // Permite volver a elegir el mismo archivo tras un fallo.
+    e.target.value = '';
   }
 
   function handleDragEnter(e) {
@@ -63,8 +77,7 @@ export default function UploadModal({ categories, onUpload, onClose }) {
   }
 
   function removeFile(index) {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
-    setPreviews((prev) => prev.filter((_, i) => i !== index));
+    setItems((prev) => prev.filter((_, i) => i !== index));
   }
 
   function toggleTag(tag) {
@@ -74,10 +87,12 @@ export default function UploadModal({ categories, onUpload, onClose }) {
   }
 
   async function handleUpload() {
-    if (files.length === 0) return;
+    if (items.length === 0) return;
+    const total = items.length;
     setUploading(true);
+    setError('');
     try {
-      await onUpload(files, {
+      await onUpload(items.map((it) => it.file), {
         projectName,
         clientName,
         tags: selectedTags,
@@ -85,6 +100,17 @@ export default function UploadModal({ categories, onUpload, onClose }) {
       onClose();
     } catch (err) {
       console.error('Upload error:', err);
+      const done = err?.uploadedCount || 0;
+      const pending = total - done;
+      const detail = err?.message || 'No se han podido subir las fotos.';
+      setError(
+        done > 0
+          ? `${detail} Se ${done === 1 ? 'ha' : 'han'} subido ${done} de ${total}; ${pending === 1 ? 'la que falta sigue' : `las ${pending} que faltan siguen`} aquí para reintentarlo.`
+          : `${detail} No se ha subido ninguna foto.`
+      );
+      // Las ya subidas salen de la lista: reintentar no las duplica.
+      setItems((prev) => prev.slice(done));
+      setProgress(0);
       setUploading(false);
     }
   }
@@ -132,11 +158,11 @@ export default function UploadModal({ categories, onUpload, onClose }) {
           />
         </div>
 
-        {previews.length > 0 && (
+        {items.length > 0 && (
           <div style={styles.previewGrid}>
-            {previews.map((preview, i) => (
+            {items.map((item, i) => (
               <div key={i} style={styles.previewItem}>
-                <img src={preview.url} alt="" style={styles.previewImg} />
+                <img src={item.url} alt="" style={styles.previewImg} />
                 <button
                   onClick={() => removeFile(i)}
                   style={styles.removeBtn}
@@ -204,6 +230,13 @@ export default function UploadModal({ categories, onUpload, onClose }) {
           </div>
         </div>
 
+        {error && (
+          <div style={styles.error} role="alert">
+            <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: '1px' }} />
+            <span>{error}</span>
+          </div>
+        )}
+
         {uploading && (
           <div style={styles.progressContainer}>
             <div style={{ ...styles.progressBar, width: `${progress}%` }} />
@@ -220,15 +253,15 @@ export default function UploadModal({ categories, onUpload, onClose }) {
           </button>
           <button
             onClick={handleUpload}
-            disabled={files.length === 0 || uploading}
+            disabled={items.length === 0 || uploading}
             style={{
               ...commonStyles.button,
               ...commonStyles.buttonPrimary,
-              opacity: files.length === 0 || uploading ? 0.5 : 1,
+              opacity: items.length === 0 || uploading ? 0.5 : 1,
             }}
           >
             <Upload size={16} />
-            {uploading ? 'Subiendo...' : `Subir ${files.length} foto${files.length !== 1 ? 's' : ''}`}
+            {uploading ? 'Subiendo...' : `Subir ${items.length} foto${items.length !== 1 ? 's' : ''}`}
           </button>
         </div>
       </div>
@@ -371,6 +404,18 @@ const styles = {
     display: 'flex',
     flexWrap: 'wrap',
     gap: '6px',
+  },
+  error: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '10px',
+    padding: '12px 14px',
+    marginBottom: '16px',
+    border: `1px solid ${colors.danger}`,
+    color: colors.danger,
+    fontSize: '13px',
+    lineHeight: 1.45,
+    fontFamily: fonts.primary,
   },
   progressContainer: {
     backgroundColor: colors.bgTertiary,

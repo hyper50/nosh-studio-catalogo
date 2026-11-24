@@ -2,12 +2,17 @@ import { useState } from 'react';
 import { colors, fonts, radius, commonStyles } from '../../styles/theme';
 import { Plus, Trash2, Edit3, Save, X, ChevronDown, ChevronUp } from 'lucide-react';
 
-export default function CategoriesManager({ categories, onAddCategory, onUpdateCategory, onDeleteCategory, onAddTag, onDeleteTag }) {
+export default function CategoriesManager({ categories, onAddCategory, onUpdateCategory, onDeleteCategory, onAddTag, onDeleteTag, onRenameTag }) {
   const [newGroupName, setNewGroupName] = useState('');
   const [newTagInputs, setNewTagInputs] = useState({});
   const [expandedGroups, setExpandedGroups] = useState({});
   const [editingGroup, setEditingGroup] = useState(null);
   const [editName, setEditName] = useState('');
+  // Etiqueta que se está corrigiendo: { cat, tag }.
+  const [editingTag, setEditingTag] = useState(null);
+  const [editTagName, setEditTagName] = useState('');
+  const [tagBusy, setTagBusy] = useState(false);
+  const [tagMessage, setTagMessage] = useState(null);
 
   function toggleGroup(name) {
     setExpandedGroups((prev) => ({ ...prev, [name]: !prev[name] }));
@@ -36,6 +41,44 @@ export default function CategoriesManager({ categories, onAddCategory, onUpdateC
       onUpdateCategory(oldName, editName.trim());
     }
     setEditingGroup(null);
+  }
+
+  function startEditTag(cat, tag) {
+    setEditingTag({ cat, tag });
+    setEditTagName(tag);
+    setTagMessage(null);
+  }
+
+  async function saveEditTag() {
+    if (!editingTag || tagBusy) return;
+    const oldTag = editingTag.tag;
+    const name = editTagName.trim();
+    if (!name || name === oldTag) {
+      setEditingTag(null);
+      return;
+    }
+    setTagBusy(true);
+    try {
+      const changed = await onRenameTag(oldTag, name);
+      setTagMessage({
+        cat: editingTag.cat,
+        text:
+          changed > 0
+            ? `«${oldTag}» ahora es «${name}». Actualizada en ${changed} foto${changed === 1 ? '' : 's'}.`
+            : `«${oldTag}» ahora es «${name}». Ninguna foto la llevaba.`,
+      });
+      setEditingTag(null);
+    } catch (err) {
+      console.error('No se pudo renombrar la etiqueta:', err);
+      setTagMessage({
+        cat: editingTag.cat,
+        error: true,
+        text: err?.message?.startsWith('Ya existe')
+          ? err.message
+          : 'No se ha podido cambiar el nombre. Inténtalo de nuevo.',
+      });
+    }
+    setTagBusy(false);
   }
 
   return (
@@ -87,15 +130,45 @@ export default function CategoriesManager({ categories, onAddCategory, onUpdateC
             {isExpanded && (
               <div style={styles.tagSection}>
                 <div style={styles.tagList}>
-                  {cat.tags.map((tag) => (
-                    <div key={tag} style={styles.tagItem}>
-                      <span style={styles.tagText}>{tag}</span>
-                      <button onClick={() => onDeleteTag(cat.name, tag)} style={styles.tagDeleteBtn}>
-                        <X size={12} />
-                      </button>
-                    </div>
-                  ))}
+                  {cat.tags.map((tag) =>
+                    editingTag?.cat === cat.name && editingTag.tag === tag ? (
+                      <div key={tag} style={styles.tagEdit}>
+                        <input
+                          value={editTagName}
+                          onChange={(e) => setEditTagName(e.target.value)}
+                          style={styles.tagEditInput}
+                          autoFocus
+                          disabled={tagBusy}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') saveEditTag();
+                            if (e.key === 'Escape') setEditingTag(null);
+                          }}
+                        />
+                        <button onClick={saveEditTag} disabled={tagBusy} style={styles.tagIconBtn} title="Guardar">
+                          <Save size={13} color={colors.success} />
+                        </button>
+                        <button onClick={() => setEditingTag(null)} disabled={tagBusy} style={styles.tagIconBtn} title="Cancelar">
+                          <X size={13} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div key={tag} style={styles.tagItem}>
+                        <span style={styles.tagText}>{tag}</span>
+                        <button onClick={() => startEditTag(cat.name, tag)} style={styles.tagIconBtn} title="Cambiar nombre">
+                          <Edit3 size={12} />
+                        </button>
+                        <button onClick={() => onDeleteTag(cat.name, tag)} style={styles.tagIconBtn} title="Quitar etiqueta">
+                          <X size={12} />
+                        </button>
+                      </div>
+                    )
+                  )}
                 </div>
+                {tagMessage?.cat === cat.name && (
+                  <p style={{ ...styles.tagMessage, ...(tagMessage.error ? styles.tagMessageError : {}) }}>
+                    {tagMessage.text}
+                  </p>
+                )}
                 <div style={styles.addTagRow}>
                   <input
                     value={newTagInputs[cat.name] || ''}
@@ -205,9 +278,9 @@ const styles = {
   tagItem: {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: '4px',
-    padding: '4px 8px 4px 10px',
-    borderRadius: '16px',
+    gap: '2px',
+    padding: '4px 6px 4px 10px',
+    borderRadius: 0,
     fontSize: '12px',
     backgroundColor: colors.bgSecondary,
     color: colors.textSecondary,
@@ -215,14 +288,41 @@ const styles = {
   },
   tagText: {
     fontSize: '12px',
+    marginRight: '4px',
   },
-  tagDeleteBtn: {
+  tagIconBtn: {
     background: 'none',
     border: 'none',
     color: colors.textMuted,
     cursor: 'pointer',
-    padding: '2px',
+    padding: '3px',
     display: 'flex',
+  },
+  tagEdit: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '2px',
+    padding: '2px 6px 2px 2px',
+    border: `1px solid ${colors.black}`,
+    backgroundColor: colors.bgSecondary,
+  },
+  tagEditInput: {
+    border: 'none',
+    outline: 'none',
+    fontSize: '12px',
+    fontFamily: fonts.primary,
+    color: colors.text,
+    padding: '3px 8px',
+    width: '160px',
+    backgroundColor: 'transparent',
+  },
+  tagMessage: {
+    fontSize: '12px',
+    color: colors.success,
+    margin: '0 0 10px 0',
+  },
+  tagMessageError: {
+    color: colors.danger,
   },
   addTagRow: {
     display: 'flex',

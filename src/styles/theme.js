@@ -132,7 +132,7 @@ export const commonStyles = {
   chipActive: {
     backgroundColor: colors.black,
     color: colors.paper,
-    borderColor: colors.black,
+    border: `1px solid ${colors.black}`,
   },
   modal: {
     position: 'fixed',

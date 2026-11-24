@@ -22,6 +22,7 @@ export default function SettingsView({
   onDeleteCategory,
   onAddTag,
   onDeleteTag,
+  onRenameTag,
   studioSettings,
   onUpdateStudio,
 }) {
@@ -58,6 +59,7 @@ export default function SettingsView({
             onDeleteCategory={onDeleteCategory}
             onAddTag={onAddTag}
             onDeleteTag={onDeleteTag}
+            onRenameTag={onRenameTag}
           />
         )}
         {activeTab === 'users' && <UsersManager />}

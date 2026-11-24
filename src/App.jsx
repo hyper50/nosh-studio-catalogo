@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { db } from './firebase';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import {
+  doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, writeBatch,
+} from 'firebase/firestore';
 import { defaultCategories } from './utils/defaultCategories';
 import { purgeExpiredTrash } from './utils/trashCleanup';
+import { normalize, withSortedTags } from './utils/search';
 import { colors, fonts } from './styles/theme';
 
 import Login from './components/Auth/Login';
@@ -21,6 +24,9 @@ function AppContent() {
   const [categories, setCategories] = useState([]);
   const [studioSettings, setStudioSettings] = useState({});
   const [loading, setLoading] = useState(true);
+
+  // Lo que ven las pantallas: cada categoría con sus etiquetas en orden alfabético.
+  const sortedCategories = useMemo(() => withSortedTags(categories), [categories]);
 
   useEffect(() => {
     if (currentUser) {
@@ -84,6 +90,38 @@ function AppContent() {
     await updateDoc(doc(db, 'settings', 'categories'), { list: updated });
   }
 
+  // Corrige el nombre de una etiqueta en la lista y en todas las fotos que la
+  // llevan (también las de la papelera). Primero las fotos: si algo falla a
+  // medias, la etiqueta antigua sigue en la lista y se puede repetir.
+  async function handleRenameTag(oldTag, newTag) {
+    const name = newTag.trim();
+    if (!name || name === oldTag) return 0;
+    const taken = categories.some((c) =>
+      c.tags.some((t) => t !== oldTag && normalize(t) === normalize(name))
+    );
+    if (taken) throw new Error(`Ya existe una etiqueta «${name}».`);
+
+    const snap = await getDocs(
+      query(collection(db, 'photos'), where('tags', 'array-contains', oldTag))
+    );
+    for (let i = 0; i < snap.docs.length; i += 400) {
+      const batch = writeBatch(db);
+      snap.docs.slice(i, i + 400).forEach((d) => {
+        const tags = [...new Set((d.data().tags || []).map((t) => (t === oldTag ? name : t)))];
+        batch.update(doc(db, 'photos', d.id), { tags });
+      });
+      await batch.commit();
+    }
+
+    const updated = categories.map((c) => ({
+      ...c,
+      tags: [...new Set(c.tags.map((t) => (t === oldTag ? name : t)))],
+    }));
+    setCategories(updated);
+    await updateDoc(doc(db, 'settings', 'categories'), { list: updated });
+    return snap.docs.length;
+  }
+
   async function handleDeleteTag(categoryName, tag) {
     const updated = categories.map((c) =>
       c.name === categoryName
@@ -134,19 +172,20 @@ function AppContent() {
       />
       <main style={styles.main}>
         {currentView === 'management' && (
-          <ManagementView categories={categories} />
+          <ManagementView categories={sortedCategories} />
         )}
         {currentView === 'presentation' && (
-          <PresentationView categories={categories} studioSettings={studioSettings} />
+          <PresentationView categories={sortedCategories} studioSettings={studioSettings} />
         )}
         {currentView === 'settings' && (
           <SettingsView
-            categories={categories}
+            categories={sortedCategories}
             onAddCategory={handleAddCategory}
             onUpdateCategory={handleUpdateCategory}
             onDeleteCategory={handleDeleteCategory}
             onAddTag={handleAddTag}
             onDeleteTag={handleDeleteTag}
+            onRenameTag={handleRenameTag}
             studioSettings={studioSettings}
             onUpdateStudio={handleUpdateStudio}
           />

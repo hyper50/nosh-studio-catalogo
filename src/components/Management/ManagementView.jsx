@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { db, storage } from '../../firebase';
 import {
-  collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, addDoc, writeBatch, getDocs, where,
+  collection, query, orderBy, onSnapshot, doc, updateDoc, addDoc, writeBatch,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useAuth } from '../../contexts/AuthContext';
 import { compressImage, generateThumbnail, safeFilename } from '../../utils/imageCompressor';
 import { sortPhotos, computeMove, ordersForNewBatch } from '../../utils/photoOrder';
+import { filterPhotos, photoCountLabel } from '../../utils/search';
+import { downloadOriginals } from '../../utils/download';
 import { colors, fonts, commonStyles } from '../../styles/theme';
 import SearchBar from '../Common/SearchBar';
 import TagFilter from '../Common/TagFilter';
@@ -14,8 +16,33 @@ import PhotoGrid from '../Gallery/PhotoGrid';
 import PhotoViewer from '../Gallery/PhotoViewer';
 import PhotoEditor from './PhotoEditor';
 import UploadModal from './UploadModal';
-import BatchTagger from './BatchTagger';
+import SelectionBar from './SelectionBar';
 import { Upload, CheckSquare, X } from 'lucide-react';
+
+// Firestore admite 500 escrituras por lote; se trocea con margen.
+const BATCH_SIZE = 400;
+
+// Explica un fallo de subida con palabras que sirvan a quien sube la foto.
+function describeUploadError(err, file) {
+  const name = `«${file.name}»`;
+  if (/\.(heic|heif)$/i.test(file.name) || /hei[cf]/i.test(file.type)) {
+    return `${name} está en formato HEIC (el de iPhone) y este navegador no puede procesarlo. Conviértela a JPG y vuelve a subirla.`;
+  }
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    return `Se ha perdido la conexión al subir ${name}.`;
+  }
+  switch (err?.code) {
+    case 'storage/unauthorized':
+      return `El almacén ha rechazado ${name}: el formato o el tamaño no están permitidos (máximo 50 MB por foto).`;
+    case 'storage/quota-exceeded':
+      return `No queda espacio en el almacén para subir ${name}.`;
+    case 'storage/retry-limit-exceeded':
+    case 'storage/canceled':
+      return `La conexión se ha cortado al subir ${name}.`;
+    default:
+      return `No se ha podido subir ${name}.`;
+  }
+}
 
 export default function ManagementView({ categories }) {
   const { currentUser } = useAuth();
@@ -29,6 +56,14 @@ export default function ManagementView({ categories }) {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [notice, setNotice] = useState('');
+
+  // Mensaje breve en la barra de selección tras una acción.
+  useEffect(() => {
+    if (!notice) return undefined;
+    const t = setTimeout(() => setNotice(''), 3500);
+    return () => clearTimeout(t);
+  }, [notice]);
 
   useEffect(() => {
     const q = query(collection(db, 'photos'), orderBy('createdAt', 'desc'));
@@ -48,18 +83,8 @@ export default function ManagementView({ categories }) {
     );
   }
 
-  const filteredPhotos = photos.filter((photo) => {
-    if (showFeatured && !photo.featured) return false;
-    if (selectedTags.length > 0 && !selectedTags.some((t) => photo.tags?.includes(t))) return false;
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      const matchName = photo.projectName?.toLowerCase().includes(q);
-      const matchClient = photo.clientName?.toLowerCase().includes(q);
-      const matchTag = photo.tags?.some((t) => t.toLowerCase().includes(q));
-      if (!matchName && !matchClient && !matchTag) return false;
-    }
-    return true;
-  });
+  const filteredPhotos = filterPhotos(photos, { searchQuery, selectedTags, showFeatured });
+  const selectedPhotos = photos.filter((p) => selectedIds.includes(p.id));
 
   async function handleUpload(files, metadata, onProgress) {
     const total = files.length;
@@ -76,58 +101,74 @@ export default function ManagementView({ categories }) {
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const compressed = await compressImage(file);
-      const thumbnail = await generateThumbnail(file);
+      const uploaded = [];
+      try {
+        const compressed = await compressImage(file);
+        const thumbnail = await generateThumbnail(file);
 
-      const timestamp = Date.now();
-      const cleanName = safeFilename(file.name);
-      const base = `${timestamp}_${i}_${cleanName}`;
+        const timestamp = Date.now();
+        const cleanName = safeFilename(file.name);
+        const base = `${timestamp}_${i}_${cleanName}`;
 
-      const paths = {
-        photo: `photos/${base}`,
-        thumbnail: `thumbnails/${base}`,
-        original: `originals/${base}`,
-      };
+        const paths = {
+          photo: `photos/${base}`,
+          thumbnail: `thumbnails/${base}`,
+          original: `originals/${base}`,
+        };
 
-      // Miniatura primero: es la que aparece antes en la galería.
-      await uploadBytes(ref(storage, paths.thumbnail), thumbnail);
-      advance();
+        // Miniatura primero: es la que aparece antes en la galería.
+        await uploadBytes(ref(storage, paths.thumbnail), thumbnail);
+        uploaded.push(paths.thumbnail);
+        advance();
 
-      await uploadBytes(ref(storage, paths.photo), compressed);
-      advance();
+        await uploadBytes(ref(storage, paths.photo), compressed);
+        uploaded.push(paths.photo);
+        advance();
 
-      // El original se marca como adjunto para que el navegador
-      // lo descargue en lugar de abrirlo.
-      await uploadBytes(ref(storage, paths.original), file, {
-        contentType: file.type || 'application/octet-stream',
-        contentDisposition: `attachment; filename="${cleanName}"`,
-      });
-      advance();
+        // El original se marca como adjunto para que el navegador
+        // lo descargue en lugar de abrirlo.
+        await uploadBytes(ref(storage, paths.original), file, {
+          contentType: file.type || 'application/octet-stream',
+          contentDisposition: `attachment; filename="${cleanName}"`,
+        });
+        uploaded.push(paths.original);
+        advance();
 
-      const [thumbnailUrl, url, originalUrl] = await Promise.all([
-        getDownloadURL(ref(storage, paths.thumbnail)),
-        getDownloadURL(ref(storage, paths.photo)),
-        getDownloadURL(ref(storage, paths.original)),
-      ]);
+        const [thumbnailUrl, url, originalUrl] = await Promise.all([
+          getDownloadURL(ref(storage, paths.thumbnail)),
+          getDownloadURL(ref(storage, paths.photo)),
+          getDownloadURL(ref(storage, paths.original)),
+        ]);
 
-      await addDoc(collection(db, 'photos'), {
-        url,
-        thumbnailUrl,
-        originalUrl,
-        storagePath: paths.photo,
-        thumbnailPath: paths.thumbnail,
-        originalPath: paths.original,
-        originalName: file.name,
-        originalSize: file.size,
-        projectName: metadata.projectName || '',
-        clientName: metadata.clientName || '',
-        tags: metadata.tags || [],
-        featured: false,
-        deleted: false,
-        order: orders[i],
-        uploadedBy: currentUser.uid,
-        createdAt: new Date().toISOString(),
-      });
+        await addDoc(collection(db, 'photos'), {
+          url,
+          thumbnailUrl,
+          originalUrl,
+          storagePath: paths.photo,
+          thumbnailPath: paths.thumbnail,
+          originalPath: paths.original,
+          originalName: file.name,
+          originalSize: file.size,
+          projectName: metadata.projectName || '',
+          clientName: metadata.clientName || '',
+          tags: metadata.tags || [],
+          featured: false,
+          deleted: false,
+          order: orders[i],
+          uploadedBy: currentUser.uid,
+          createdAt: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.error('Error al subir', file.name, err);
+        // La foto se quedó a medias: se retiran sus archivos para no dejar restos.
+        await Promise.all(
+          uploaded.map((path) => deleteObject(ref(storage, path)).catch(() => {}))
+        );
+        const failure = new Error(describeUploadError(err, file));
+        // Las anteriores sí se subieron; el aviso lo cuenta y permite reintentar el resto.
+        failure.uploadedCount = i;
+        throw failure;
+      }
     }
   }
 
@@ -179,17 +220,70 @@ export default function ManagementView({ categories }) {
     );
   }
 
-  async function handleBatchTag(tags) {
-    const batch = writeBatch(db);
-    selectedIds.forEach((id) => {
-      const photo = photos.find((p) => p.id === id);
-      const existingTags = photo?.tags || [];
-      const newTags = [...new Set([...existingTags, ...tags])];
-      batch.update(doc(db, 'photos', id), { tags: newTags });
-    });
-    await batch.commit();
+  function closeSelection() {
     setSelectMode(false);
     setSelectedIds([]);
+  }
+
+  // Aplica el mismo cambio a todas las fotos elegidas, en lotes.
+  async function updateSelected(buildUpdate) {
+    const targets = selectedPhotos;
+    for (let i = 0; i < targets.length; i += BATCH_SIZE) {
+      const batch = writeBatch(db);
+      targets.slice(i, i + BATCH_SIZE).forEach((photo) => {
+        batch.update(doc(db, 'photos', photo.id), buildUpdate(photo));
+      });
+      await batch.commit();
+    }
+    return targets.length;
+  }
+
+  const fotos = (n) => `${n} foto${n === 1 ? '' : 's'}`;
+
+  async function runBatch(action, doneMessage) {
+    try {
+      const n = await action();
+      setNotice(doneMessage(n));
+      return true;
+    } catch (err) {
+      console.error('No se pudo aplicar el cambio:', err);
+      setNotice('No se ha podido guardar el cambio. Inténtalo de nuevo.');
+      return false;
+    }
+  }
+
+  function handleBatchTag(tags) {
+    return runBatch(
+      () => updateSelected((photo) => ({ tags: [...new Set([...(photo.tags || []), ...tags])] })),
+      (n) => `Etiquetas aplicadas a ${fotos(n)}`
+    );
+  }
+
+  function handleBatchFeatured(featured) {
+    return runBatch(
+      () => updateSelected(() => ({ featured })),
+      (n) => (featured ? `${fotos(n)} marcada${n === 1 ? '' : 's'} como destacada${n === 1 ? '' : 's'}` : `Destacada quitada de ${fotos(n)}`)
+    );
+  }
+
+  async function handleBatchDelete() {
+    const deletedAt = new Date().toISOString();
+    const ok = await runBatch(
+      () => updateSelected(() => ({ deleted: true, deletedAt })),
+      (n) => `${fotos(n)} enviada${n === 1 ? '' : 's'} a la papelera`
+    );
+    if (ok) setSelectedIds([]);
+  }
+
+  function handleBatchDownload() {
+    const { started, missing } = downloadOriginals(selectedPhotos);
+    if (started === 0) {
+      setNotice('Estas fotos no tienen original guardado');
+    } else if (missing > 0) {
+      setNotice(`Descargando ${fotos(started)}; ${missing} no tiene${missing === 1 ? '' : 'n'} original`);
+    } else {
+      setNotice(`Descargando ${fotos(started)}`);
+    }
   }
 
   const viewerIndex = viewerPhoto ? filteredPhotos.findIndex((p) => p.id === viewerPhoto.id) : -1;
@@ -223,26 +317,21 @@ export default function ManagementView({ categories }) {
           </button>
         </div>
 
-        <TagFilter
-          categories={categories}
-          selectedTags={selectedTags}
-          onToggleTag={toggleTag}
-          showFeatured={showFeatured}
-          onToggleFeatured={() => setShowFeatured(!showFeatured)}
-        />
+        <div style={styles.filterRow}>
+          <TagFilter
+            categories={categories}
+            selectedTags={selectedTags}
+            onToggleTag={toggleTag}
+            showFeatured={showFeatured}
+            onToggleFeatured={() => setShowFeatured(!showFeatured)}
+          />
+          {!loading && (
+            <span style={styles.count}>
+              {photoCountLabel(filteredPhotos.length, photos.length)}
+            </span>
+          )}
+        </div>
       </div>
-
-      {selectMode && selectedIds.length > 0 && (
-        <BatchTagger
-          selectedCount={selectedIds.length}
-          categories={categories}
-          onApplyTags={handleBatchTag}
-          onCancel={() => {
-            setSelectMode(false);
-            setSelectedIds([]);
-          }}
-        />
-      )}
 
       {loading ? (
         <div style={styles.loading}>Cargando fotos...</div>
@@ -263,6 +352,23 @@ export default function ManagementView({ categories }) {
           showManagement={true}
           onReorder={selectMode ? undefined : handleReorder}
         />
+      )}
+
+      {selectMode && (
+        <>
+          {/* Hueco para que la barra fija no tape la última fila. */}
+          <div style={styles.barSpacer} />
+          <SelectionBar
+            selectedPhotos={selectedPhotos}
+            categories={categories}
+            notice={notice}
+            onApplyTags={handleBatchTag}
+            onSetFeatured={handleBatchFeatured}
+            onDownload={handleBatchDownload}
+            onDelete={handleBatchDelete}
+            onCancel={closeSelection}
+          />
+        </>
       )}
 
       {showUpload && (
@@ -301,11 +407,34 @@ const styles = {
     padding: '16px',
     fontFamily: fonts.primary,
   },
+  // Buscador y filtros se quedan a la vista, pegados bajo la barra superior.
   toolbar: {
+    position: 'sticky',
+    top: '52px',
+    zIndex: 40,
+    backgroundColor: colors.bg,
+    margin: '-16px -16px 16px',
+    padding: '12px 16px',
+    borderBottom: `1px solid ${colors.borderLight}`,
     display: 'flex',
     flexDirection: 'column',
-    gap: '12px',
-    marginBottom: '20px',
+    gap: '10px',
+  },
+  filterRow: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: '16px',
+  },
+  count: {
+    flexShrink: 0,
+    fontSize: '12px',
+    color: colors.textMuted,
+    paddingTop: '6px',
+    whiteSpace: 'nowrap',
+  },
+  barSpacer: {
+    height: '72px',
   },
   searchRow: {
     display: 'flex',

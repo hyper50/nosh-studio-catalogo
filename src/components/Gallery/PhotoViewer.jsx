@@ -26,12 +26,25 @@ export default function PhotoViewer({ photos, currentIndex, onClose, onToggleFea
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [goNext, goPrev, onClose]);
 
+  // Con la imagen ampliada con los dedos, arrastrar sirve para moverse por
+  // ella; solo se cambia de foto con la vista a tamaño normal y un dedo.
+  function isZoomed() {
+    return (window.visualViewport?.scale || 1) > 1.02;
+  }
+
   function handleTouchStart(e) {
+    if (e.touches.length !== 1 || isZoomed()) {
+      setTouchStart(null);
+      return;
+    }
     setTouchStart(e.touches[0].clientX);
   }
 
   function handleTouchEnd(e) {
-    if (touchStart === null) return;
+    if (touchStart === null || isZoomed()) {
+      setTouchStart(null);
+      return;
+    }
     const diff = touchStart - e.changedTouches[0].clientX;
     if (Math.abs(diff) > 50) {
       if (diff > 0) goNext();
