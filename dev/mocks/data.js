@@ -43,6 +43,13 @@ export function seed() {
       { name: 'Herrajes', tags: ['Hettich', 'BLUN', 'Grass'] },
       { name: 'Acabado', tags: ['Roble', 'Negro', 'Blanco', 'Nogal', 'Lacado mate', 'Encimera porcelánica'] },
       { name: 'Electrodomésticos', tags: ['Miele', 'Gaggenau', 'Bora', 'V-Zug', 'Sub-Zero', 'Liebherr', 'Siemens', 'Neff'] },
+      {
+        name: 'Detalles',
+        tags: ['Balda', 'Canto grueso', 'Canto sencillo', 'Cocina exterior', 'Gola', 'Tirador integrado',
+          'Tirador barra', 'Iluminación LED', 'Zócalo', 'Columna', 'Vitrina', 'Botellero', 'Especiero',
+          'Puerta corredera', 'Puerta abatible', 'Frente de vidrio', 'Panelado', 'Rinconero'],
+      },
+      { name: 'Estancia', tags: ['Cocina', 'Despensa', 'Lavadero', 'Vestidor', 'Baño', 'Salón', 'Exterior'] },
     ],
   });
   store.set('settings/studio', { name: 'Nosh Studio', logoUrl: '' });

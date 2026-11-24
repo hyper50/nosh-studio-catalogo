@@ -51,13 +51,16 @@ export default function PhotoEditor({ photo, categories, onSave, onDelete, onClo
     ? { ...commonStyles.modalContent, maxWidth: '95vw', padding: '16px' }
     : {
         ...commonStyles.modalContent,
-        maxWidth: '1100px',
-        width: '95vw',
+        // Ocupa casi toda la pantalla: foto grande a la izquierda y un panel de
+        // etiquetas que llega hasta "Descargar original".
+        maxWidth: '1680px',
+        width: '96vw',
+        height: '92vh',
+        maxHeight: '92vh',
         display: 'flex',
-        gap: '28px',
+        gap: '32px',
         padding: '0',
         overflow: 'hidden',
-        maxHeight: '85vh',
       };
 
   return (
@@ -182,20 +185,18 @@ export default function PhotoEditor({ photo, categories, onSave, onDelete, onClo
 
 const styles = {
   imageSection: {
-    flex: '0 0 55%',
+    flex: '0 0 60%',
+    height: '100%',
     backgroundColor: colors.bg,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: '400px',
-    maxHeight: '85vh',
     overflow: 'hidden',
   },
   image: {
     width: '100%',
     height: '100%',
     objectFit: 'contain',
-    maxHeight: '85vh',
   },
   imageSectionMobile: {
     width: '100%',
@@ -214,9 +215,9 @@ const styles = {
     flexDirection: 'column',
     gap: '12px',
     minWidth: 0,
-    padding: '24px 24px 24px 0',
-    overflowY: 'auto',
-    maxHeight: '85vh',
+    minHeight: 0,
+    height: '100%',
+    padding: '28px 28px 24px 0',
   },
   formSectionMobile: {
     display: 'flex',
@@ -253,17 +254,24 @@ const styles = {
     fontFamily: fonts.primary,
     letterSpacing: '0.1em',
   },
+  // La zona de etiquetas se estira hasta el botón de descarga y, si no caben,
+  // se desplaza solo ella; proyecto, cliente y botones quedan siempre a la vista.
   tagSection: {
     flex: 1,
-    overflow: 'auto',
-  },
-  tagGroups: {
+    minHeight: '160px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '8px',
-    marginTop: '6px',
-    maxHeight: '250px',
-    overflow: 'auto',
+    marginTop: '4px',
+  },
+  tagGroups: {
+    flex: 1,
+    minHeight: 0,
+    overflowY: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+    marginTop: '10px',
+    paddingRight: '8px',
   },
   tagGroup: {},
   tagGroupName: {
@@ -271,13 +279,13 @@ const styles = {
     color: colors.textMuted,
     fontWeight: '600',
     textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    margin: '0 0 4px 0',
+    letterSpacing: '0.1em',
+    margin: '0 0 8px 0',
   },
   tagList: {
     display: 'flex',
     flexWrap: 'wrap',
-    gap: '4px',
+    gap: '6px',
   },
   downloadLink: {
     display: 'inline-flex',
