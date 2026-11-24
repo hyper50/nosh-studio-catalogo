@@ -9,21 +9,64 @@ export default function PhotoGrid({
   selectedIds = [],
   onToggleSelect,
   showManagement = false,
+  onReorder,
 }) {
   const [hoveredId, setHoveredId] = useState(null);
+  const [draggedId, setDraggedId] = useState(null);
+  const [overId, setOverId] = useState(null);
+
+  const canReorder = typeof onReorder === 'function';
+  const draggedIndex = draggedId ? photos.findIndex((p) => p.id === draggedId) : -1;
+
+  function endDrag() {
+    setDraggedId(null);
+    setOverId(null);
+  }
 
   return (
     <div style={styles.grid}>
-      {photos.map((photo) => {
+      {photos.map((photo, index) => {
         const isSelected = selectedIds.includes(photo.id);
         const isHovered = hoveredId === photo.id;
+        const isDragged = draggedId === photo.id;
+        const isDropTarget = canReorder && draggedId && overId === photo.id && !isDragged;
+        // La marca indica dónde caerá: detrás si viene de arriba, delante si viene de abajo.
+        const dropAfter = isDropTarget && draggedIndex < index;
+
+        const dragProps = canReorder
+          ? {
+              draggable: true,
+              onDragStart: (e) => {
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', photo.id);
+                setDraggedId(photo.id);
+              },
+              onDragOver: (e) => {
+                if (!draggedId) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                if (overId !== photo.id) setOverId(photo.id);
+              },
+              onDrop: (e) => {
+                if (!draggedId) return;
+                e.preventDefault();
+                const from = draggedId;
+                endDrag();
+                if (from !== photo.id) onReorder(from, photo.id);
+              },
+              onDragEnd: endDrag,
+            }
+          : {};
 
         return (
           <div
             key={photo.id}
+            {...dragProps}
             style={{
               ...styles.card,
               ...(isSelected ? styles.cardSelected : {}),
+              ...(canReorder ? styles.cardDraggable : {}),
+              ...(isDragged ? styles.cardDragged : {}),
             }}
             onMouseEnter={() => setHoveredId(photo.id)}
             onMouseLeave={() => setHoveredId(null)}
@@ -35,15 +78,25 @@ export default function PhotoGrid({
               }
             }}
           >
+            {isDropTarget && (
+              <div
+                style={{
+                  ...styles.dropMarker,
+                  ...(dropAfter ? { right: '-7px' } : { left: '-7px' }),
+                }}
+              />
+            )}
+
             <div style={styles.imageWrapper}>
               <img
                 src={photo.thumbnailUrl || photo.url}
                 alt={photo.projectName || 'Foto'}
                 style={styles.image}
                 loading="lazy"
+                draggable={false}
               />
 
-              {(isHovered || isSelected) && (
+              {(isHovered || isSelected) && !draggedId && (
                 <div style={styles.overlay}>
                   {selectable && (
                     <div
@@ -88,15 +141,30 @@ const styles = {
     padding: '0',
   },
   card: {
+    position: 'relative',
     borderRadius: radius.md,
-    overflow: 'hidden',
     backgroundColor: colors.bgCard,
     border: '2px solid transparent',
     cursor: 'pointer',
-    transition: 'all 0.2s',
+    transition: 'opacity 0.15s, border-color 0.2s',
   },
   cardSelected: {
     borderColor: colors.black,
+  },
+  cardDraggable: {
+    cursor: 'grab',
+  },
+  cardDragged: {
+    opacity: 0.35,
+  },
+  dropMarker: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: '3px',
+    backgroundColor: colors.black,
+    zIndex: 5,
+    pointerEvents: 'none',
   },
   imageWrapper: {
     position: 'relative',

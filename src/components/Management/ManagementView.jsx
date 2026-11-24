@@ -6,6 +6,7 @@ import {
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useAuth } from '../../contexts/AuthContext';
 import { compressImage, generateThumbnail, safeFilename } from '../../utils/imageCompressor';
+import { sortPhotos, computeMove, ordersForNewBatch } from '../../utils/photoOrder';
 import { colors, fonts, commonStyles } from '../../styles/theme';
 import SearchBar from '../Common/SearchBar';
 import TagFilter from '../Common/TagFilter';
@@ -35,7 +36,7 @@ export default function ManagementView({ categories }) {
       const data = snap.docs
         .filter((d) => !d.data().deleted)
         .map((d) => ({ id: d.id, ...d.data() }));
-      setPhotos(data);
+      setPhotos(sortPhotos(data));
       setLoading(false);
     });
     return unsub;
@@ -66,6 +67,8 @@ export default function ManagementView({ categories }) {
     const stepsPerFile = 3;
     const totalSteps = total * stepsPerFile;
     let done = 0;
+    // Toda la tanda entra arriba y en el orden en que se seleccionó.
+    const orders = ordersForNewBatch(photos, total);
     const advance = () => {
       done += 1;
       onProgress((done / totalSteps) * 100);
@@ -121,6 +124,7 @@ export default function ManagementView({ categories }) {
         tags: metadata.tags || [],
         featured: false,
         deleted: false,
+        order: orders[i],
         uploadedBy: currentUser.uid,
         createdAt: new Date().toISOString(),
       });
@@ -142,6 +146,30 @@ export default function ManagementView({ categories }) {
     const photo = photos.find((p) => p.id === photoId);
     if (photo) {
       await updateDoc(doc(db, 'photos', photoId), { featured: !photo.featured });
+    }
+  }
+
+  // Arrastrar una foto sobre otra: se recoloca entre sus nuevas vecinas.
+  async function handleReorder(draggedId, targetId) {
+    const writes = computeMove(filteredPhotos, photos, draggedId, targetId);
+    if (writes.length === 0) return;
+
+    // Se refleja al instante; Firestore confirma después.
+    const byId = new Map(writes.map((w) => [w.id, w.order]));
+    setPhotos((prev) =>
+      sortPhotos(prev.map((p) => (byId.has(p.id) ? { ...p, order: byId.get(p.id) } : p)))
+    );
+
+    try {
+      for (let i = 0; i < writes.length; i += 400) {
+        const batch = writeBatch(db);
+        writes.slice(i, i + 400).forEach((w) => {
+          batch.update(doc(db, 'photos', w.id), { order: w.order });
+        });
+        await batch.commit();
+      }
+    } catch (err) {
+      console.error('No se pudo guardar el nuevo orden:', err);
     }
   }
 
@@ -233,6 +261,7 @@ export default function ManagementView({ categories }) {
           selectedIds={selectedIds}
           onToggleSelect={toggleSelect}
           showManagement={true}
+          onReorder={selectMode ? undefined : handleReorder}
         />
       )}
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { db } from '../../firebase';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { colors, fonts } from '../../styles/theme';
+import { sortPhotos } from '../../utils/photoOrder';
 import SearchBar from '../Common/SearchBar';
 import TagFilter from '../Common/TagFilter';
 import PhotoGrid from '../Gallery/PhotoGrid';
@@ -22,7 +23,7 @@ export default function PresentationView({ categories, studioSettings }) {
       const data = snap.docs
         .filter((d) => !d.data().deleted)
         .map((d) => ({ id: d.id, ...d.data() }));
-      setPhotos(data);
+      setPhotos(sortPhotos(data));
       setLoading(false);
     });
     return unsub;
