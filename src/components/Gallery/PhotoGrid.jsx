@@ -95,10 +95,11 @@ export default function PhotoGrid({
                 draggable={false}
               />
 
-              {showManagement && photo.projectName && (
-                <div style={styles.info}>
+              {/* Gestión muestra proyecto y cliente; Presentación, solo el proyecto y en una franja más baja. */}
+              {photo.projectName && (
+                <div style={showManagement ? styles.info : styles.infoCompact}>
                   <p style={styles.projectName}>{photo.projectName}</p>
-                  {photo.clientName && (
+                  {showManagement && photo.clientName && (
                     <p style={styles.clientName}>{photo.clientName}</p>
                   )}
                 </div>
@@ -233,6 +234,16 @@ const styles = {
     padding: '30px 10px 9px',
     background:
       'linear-gradient(to top, rgba(28,28,26,0.88) 0%, rgba(28,28,26,0.62) 55%, rgba(28,28,26,0) 100%)',
+    pointerEvents: 'none',
+  },
+  infoCompact: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    padding: '16px 10px 7px',
+    background:
+      'linear-gradient(to top, rgba(28,28,26,0.82) 0%, rgba(28,28,26,0.5) 55%, rgba(28,28,26,0) 100%)',
     pointerEvents: 'none',
   },
   projectName: {

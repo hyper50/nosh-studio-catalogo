@@ -175,7 +175,7 @@ function AppContent() {
           <ManagementView categories={sortedCategories} />
         )}
         {currentView === 'presentation' && (
-          <PresentationView categories={sortedCategories} studioSettings={studioSettings} />
+          <PresentationView categories={sortedCategories} />
         )}
         {currentView === 'settings' && (
           <SettingsView

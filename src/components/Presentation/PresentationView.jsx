@@ -8,9 +8,8 @@ import SearchBar from '../Common/SearchBar';
 import TagFilter from '../Common/TagFilter';
 import PhotoGrid from '../Gallery/PhotoGrid';
 import PhotoViewer from '../Gallery/PhotoViewer';
-import NoshWordmark from '../Common/NoshWordmark';
 
-export default function PresentationView({ categories, studioSettings }) {
+export default function PresentationView({ categories }) {
   const [photos, setPhotos] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);
@@ -42,20 +41,6 @@ export default function PresentationView({ categories, studioSettings }) {
 
   return (
     <div style={styles.container}>
-      {studioSettings?.logoUrl ? (
-        <div style={styles.logoBar}>
-          <img
-            src={studioSettings.logoUrl}
-            alt={studioSettings.name || 'Studio'}
-            style={styles.logo}
-          />
-        </div>
-      ) : (
-        <div style={styles.logoBar}>
-          <NoshWordmark color={colors.text} width={160} />
-        </div>
-      )}
-
       <div style={styles.toolbar}>
         <SearchBar
           value={searchQuery}
@@ -107,24 +92,13 @@ const styles = {
     fontFamily: fonts.primary,
     minHeight: '100vh',
   },
-  logoBar: {
-    display: 'flex',
-    justifyContent: 'center',
-    padding: '16px 0 20px',
-    opacity: 0.6,
-  },
-  logo: {
-    height: '32px',
-    objectFit: 'contain',
-    opacity: 0.7,
-  },
   // Buscador y filtros se quedan a la vista, pegados bajo la barra superior.
   toolbar: {
     position: 'sticky',
     top: '52px',
     zIndex: 40,
     backgroundColor: colors.bg,
-    margin: '0 -16px 16px',
+    margin: '-16px -16px 16px',
     padding: '12px 16px',
     borderBottom: `1px solid ${colors.borderLight}`,
     display: 'flex',
