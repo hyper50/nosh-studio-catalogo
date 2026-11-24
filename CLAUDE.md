@@ -90,9 +90,9 @@ Si Moisés tiene instalada la skill `ns-identidad-marca`, es la referencia compl
 
 Subido y desplegado: rediseño de marca, editor de foto en dos columnas, originales en alta calidad con descarga.
 
-Subido el 24 de noviembre de 2026, probado con la vista de datos de mentira pero no con la cuenta real: búsqueda por palabras, filtros que se suman, etiquetas alfabéticas, contador de fotos, siete columnas, nombre sobre la miniatura, buscador fijo, barra de selección (etiquetar, destacar, descargar, eliminar varias), cambio de nombre de etiquetas, avisos de fallo al subir y zoom en tablet.
+Subido el 24 de noviembre de 2026, probado con la vista de datos de mentira pero no con la cuenta real: búsqueda por palabras, filtros que se suman, etiquetas alfabéticas, contador de fotos, nombre sobre la miniatura, buscador fijo, barra de selección (etiquetar, destacar, descargar, eliminar varias), cambio de nombre de etiquetas, avisos de fallo al subir y zoom en tablet.
 
-Decidido por Moisés: el botón de descargar el original se queda también en Presentación.
+Decidido por Moisés: la galería se queda en seis columnas (se probó con siete y prefirió seis). El botón de descargar el original se queda también en Presentación.
 
 Hecho y pendiente de comprobar en la app real:
 

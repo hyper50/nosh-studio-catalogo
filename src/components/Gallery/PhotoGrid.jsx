@@ -141,8 +141,9 @@ export default function PhotoGrid({
 const styles = {
   grid: {
     display: 'grid',
-    // 180 px de mínimo: siete columnas en el ancho completo de la app.
-    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+    // 200 px de mínimo: seis columnas en el ancho completo de la app.
+    // Se probó con siete y Moisés prefirió seis.
+    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
     gap: '10px',
     padding: '0',
   },
